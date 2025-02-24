@@ -129,7 +129,7 @@ def extract_patient_data(uploaded_file):
     return df
 
 # Streamlit Web App
-st.title("📂 Convert TXT to Excel (Fully Fixed for Missing Values)")
+st.title("📂 Convert TXT to Excel (Final Version with All Measurements)")
 st.write("Upload your structured text file, and it will be automatically converted into an Excel file with all values correctly assigned.")
 
 uploaded_file = st.file_uploader("Choose a text file", type=["txt"])
@@ -148,17 +148,12 @@ if uploaded_file is not None:
     
     # Provide a download button
     st.download_button(
-        label="📥 Download Fully Fixed Excel File",
+        label="📥 Download Final Excel File with All Measurements",
         data=output,
-        file_name="Fully_Fixed_Patient_Data.xlsx",
+        file_name="Final_Patient_Data.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-   
-          
-       
-
-   
     
         
         

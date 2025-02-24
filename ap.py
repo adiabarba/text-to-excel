@@ -5,7 +5,7 @@ import re
 
 def extract_patient_data(uploaded_file):
     """
-    Extracts structured key-value pairs from a text file and maps them only to the required titles.
+    Extracts structured key-value pairs from a text file and maps them to the specified headers.
     """
     file_content = uploaded_file.read().decode("utf-8")
     lines = file_content.split("\n")
@@ -63,21 +63,20 @@ def extract_patient_data(uploaded_file):
         if not line:
             continue
 
-        # Extract specific key-value pairs
-        if ":" in line:
-            key = line.replace(":", "").strip()
+        # Extract key-value pairs, even when values are on the next line
+        if ":" in line or "(" in line:
+            key = re.sub(r"[:\(\)]", "", line).strip()  # Remove special characters
             if key in required_titles:
                 current_key = key
                 continue  # Move to next line to capture value
 
-        elif current_key:
-            # Extract the first numeric value for each title
+        if current_key:
+            # Capture numeric values
             number_match = re.search(r"^-?\d+(\.\d+)?$", line)  # Match numbers (including decimals)
             if number_match:
-                required_titles[current_key] = number_match.group(0)  # Store only the first value
+                required_titles[current_key] = number_match.group(0)  # Store first number
             else:
                 required_titles[current_key] = line  # Store text if it's not a number
-
             current_key = None  # Reset key to avoid overwriting
 
         # Extract RAIR as "Present" or "Not Present"
@@ -130,7 +129,7 @@ def extract_patient_data(uploaded_file):
     return df
 
 # Streamlit Web App
-st.title("📂 Convert TXT to Excel (Final Optimized Version)")
+st.title("📂 Convert TXT to Excel (Fully Fixed for Missing Values)")
 st.write("Upload your structured text file, and it will be automatically converted into an Excel file with all values correctly assigned.")
 
 uploaded_file = st.file_uploader("Choose a text file", type=["txt"])
@@ -149,15 +148,12 @@ if uploaded_file is not None:
     
     # Provide a download button
     st.download_button(
-        label="📥 Download Final Optimized Excel File",
+        label="📥 Download Fully Fixed Excel File",
         data=output,
-        file_name="Final_Optimized_Patient_Data.xlsx",
+        file_name="Fully_Fixed_Patient_Data.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    
-
-       
    
           
        

@@ -1,0 +1,65 @@
+import pandas as pd
+import streamlit as st
+import io
+
+def extract_patient_data(file_content):
+    """
+    Extracts key-value pairs from a structured text file and returns a DataFrame.
+    """
+    lines = file_content.decode("utf-8").split("\n")
+    data = {}
+    current_key = None
+    current_value = ""
+
+    for line in lines:
+        line = line.strip()
+        
+        if not line:
+            continue
+        
+        if ":" in line:  # Detecting keys
+            if current_key and current_value:
+                data[current_key] = current_value.strip()
+            current_key = line.replace(":", "").strip()
+            current_value = ""
+        else:  # Assigning values
+            if current_key:
+                current_value += " " + line
+
+    # Storing the last key-value pair
+    if current_key and current_value:
+        data[current_key] = current_value.strip()
+
+    # Extract only the Patient ID (removing the name)
+    if "Patient" in data:
+        patient_info = data["Patient"].split()
+        patient_id = next((item for item in patient_info if item.isdigit()), None)
+        data["Patient"] = patient_id if patient_id else "Unknown"
+
+    # Convert to DataFrame
+    df = pd.DataFrame([data])
+    return df
+
+# Streamlit Web App
+st.title("📂 Convert TXT to Excel")
+st.write("Upload your structured text file, and it will be automatically converted into an Excel file.")
+
+uploaded_file = st.file_uploader("Choose a text file", type=["txt"])
+
+if uploaded_file is not None:
+    st.success("✅ File uploaded successfully!")
+    df = extract_patient_data(uploaded_file)
+    
+    # Save to Excel in memory
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False)
+    output.seek(0)
+    
+    # Provide a download button
+    st.download_button(
+        label="📥 Download Excel File",
+        data=output,
+        file_name="Patient_Data.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )

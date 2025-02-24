@@ -24,7 +24,8 @@ def categorize_indications(text):
         "hirschsprung": "s/p Hirschprung",
         "anorectal malformation": "Anorectal malformation",
         "anal tear": "Anal Tear",
-        "perianal tear": "Perianal Tear",  # Fixed the missing value
+        "perianal tear": "Perianal Tear",
+        "s/p perianal tear": "Perianal Tear",  # NEW: Explicitly capturing s/p perianal tear
         "spina bifida": "Spina bifida"
     }
     
@@ -39,20 +40,6 @@ uploaded_file = st.file_uploader("Upload the text file (e.g. Patient3.txt)", typ
 if uploaded_file is not None:
     # Read the file content
     data = uploaded_file.read().decode("utf-8")
-    
-    # Define the column names you want in your final Excel file
-    column_names = [
-        "Patient Name", "Patient ID", "Gender", "Date of Birth", "Physician", 
-        "Operator", "Referring Physician", "Examination Date", "Height", 
-        "Weight", "Mean Sphincter Pressure (Rectal ref) (mmHg)",
-        "Max Sphincter Pressure (Rectal ref) (mmHg)",
-        "Max Sphincter Pressure (Abs. ref) (mmHg)",
-        "Mean Sphincter Pressure (Abs. ref) (mmHg)",
-        "Length of HPZ (cm)", "Verge to Center Length (cm)",
-        "Residual Anal Pressure (mmHg)", "Anal Relaxation (%)", "First Sensation (cc)",
-        "Urge to Defecate (cc)", "Rectoanal Pressure Differential (mmHg)",
-        "RAIR", "Indications", "Diagnoses"
-    ]
     
     # --- Capture Patient Name & Patient ID correctly ---
     patient_name, patient_id = "N/A", "N/A"
@@ -78,8 +65,13 @@ if uploaded_file is not None:
     extracted_data = {
         "Patient Name": patient_name,
         "Patient ID": patient_id,
-        "Gender": extract_value(r"^Gender:\s*([A-Za-z]+)", data, default="N/A"),
-        "Date of Birth": extract_value(r"(?:DOB|Date of Birth)\s*[:]?[\s]*(.*)", data),
+
+        # --- ✅ Fixed Gender Extraction (Ensures Only "Male"/"Female") ---
+        "Gender": extract_value(r"^Gender:\s*([A-Za-z]+)\b", data, default="N/A"),
+
+        # --- ✅ Fixed DOB Extraction (Stops Before "Physician") ---
+        "Date of Birth": extract_value(r"(?:DOB|Date of Birth)\s*[:]?[\s]*([\d/]+)", data, default="N/A"),
+
         "Physician": extract_value(r"Physician\s*[:]?[\s]*(.*)", data),
         "Operator": extract_value(r"Operator\s*[:]?[\s]*(.*)", data),
         "Referring Physician": extract_value(r"Referring Physician\s*[:]?[\s]*(.*)", data),
@@ -121,26 +113,26 @@ if uploaded_file is not None:
             data
         ),
         "Urge to Defecate (cc)": extract_value(
-            r"Urge\s+to\s+defecate.*?\(cc\)\s*([\-\d\.]+)",
-            data
+            r"Urge\s+to\s+defecate.*?\(cc\)\s*([\-\d\.]+)", data
         ),
         "Rectoanal Pressure Differential (mmHg)": extract_value(
-            r"Rectoanal\s+pressure\s+differential.*?\(mmhg\)\s*([\-\d\.]+)",
-            data
+            r"Rectoanal\s+pressure\s+differential.*?\(mmhg\)\s*([\-\d\.]+)", data
         ),
         "RAIR": "Present" if "RAIR" in data else "Not Present",
+
+        # --- ✅ Fixed Indications (Now Detects "s/p perianal tear") ---
         "Indications": categorize_indications(
             extract_value(r"Indications\s*[:]?[\s]*(.*)", data)
         ),
+
         "Diagnoses": extract_value(
-            r"Diagnoses\s*\(London classification\)\s*(.*)",
-            data
+            r"Diagnoses\s*\(London classification\)\s*(.*)", data
         )
     }
     
     # Convert extracted values to DataFrame
-    df = pd.DataFrame([extracted_data], columns=column_names)
-    
+    df = pd.DataFrame([extracted_data])
+
     # Show final DataFrame in Streamlit
     st.write("## Final Extracted Data")
     st.dataframe(df)

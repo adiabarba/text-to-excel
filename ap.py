@@ -13,6 +13,24 @@ if uploaded_file:
         match = re.search(pattern, text, re.IGNORECASE)
         return match.group(1).strip() if match else default
     
+    # Define indication categories with improved keyword matching
+    indication_options = {
+        "constipation": "Constipation",
+        "incontinence": "Incontinence",
+        "hirschsprung": "s/p Hirschprung",
+        "anorectal malformation": "Anorectal malformation",
+        "anal tear": "Anal Tear",
+        "perianal tear": "Anal Tear",
+        "spina bifida": "Spina bifida"
+    }
+    
+    def categorize_indications(text):
+        text_lower = text.lower() if text != "N/A" else ""
+        for key, value in indication_options.items():
+            if key in text_lower:
+                return value
+        return "Other"
+    
     # Define column names exactly as in Book2.xlsx
     column_names = [
         "Patient Name", "Patient ID", "Gender", "Date of Birth", "Physician", "Operator",
@@ -25,37 +43,42 @@ if uploaded_file:
     
     # Extract values
     extracted_data = {
-        "Patient Name": extract_value(r"Patient Name[:\s]*(.*)", data),
-        "Patient ID": extract_value(r"Patient ID[:\s]*(\d+)", data),
+        "Patient Name": extract_value(r"Patient[:\s]*(.*)", data),
+        "Patient ID": extract_value(r"(?:Patient ID|ID Number)[:\s]*(\w+)", data),
         "Gender": extract_value(r"Gender[:\s]*(.*)", data),
-        "Date of Birth": extract_value(r"Date of Birth[:\s]*(.*)", data),
+        "Date of Birth": extract_value(r"(?:DOB|Date of Birth)[:\s]*(.*)", data),
         "Physician": extract_value(r"Physician[:\s]*(.*)", data),
         "Operator": extract_value(r"Operator[:\s]*(.*)", data),
         "Referring Physician": extract_value(r"Referring Physician[:\s]*(.*)", data),
         "Examination Date": extract_value(r"Examination Date[:\s]*(.*)", data),
-        "Height": extract_value(r"Height[:\s]*(\d+\.?\d*)", data),
-        "Weight": extract_value(r"Weight[:\s]*(\d+\.?\d*)", data),
+        "Height": extract_value(r"Height[:\s]*(\d{1,3}\.?\d*)", data),
+        "Weight": extract_value(r"Weight[:\s]*(\d{1,3}\.?\d*)", data),
         "Mean Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Mean Sphincter Pressure.*?rectal ref.*?[:\s]*(\d+\.?\d*)", data),
-        "Max Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Max Sphincter Pressure.*?rectal ref.*?[:\s]*(\d+\.?\d*)", data),
-        "Max Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Max Sphincter Pressure.*?abs.*?[:\s]*(\d+\.?\d*)", data),
-        "Mean Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Mean Sphincter Pressure.*?abs.*?[:\s]*(\d+\.?\d*)", data),
+        "Max Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure.*?rectal ref.*?[:\s]*(\d+\.?\d*)", data),
+        "Max Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure.*?abs\. ref.*?[:\s]*(\d+\.?\d*)", data),
+        "Mean Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Mean Sphincter Pressure.*?abs\. ref.*?[:\s]*(\d+\.?\d*)", data),
         "Length of HPZ (cm)": extract_value(r"Length of HPZ[:\s]*(\d+\.?\d*)", data),
-        "Verge to Center Length (cm)": extract_value(r"Verge to Center Length[:\s]*(\d+\.?\d*)", data),
-        "Residual Anal Pressure (mmHg)": extract_value(r"Residual Anal Pressure[:\s]*(\d+\.?\d*)", data),
-        "Anal Relaxation (%)": extract_value(r"Anal Relaxation[:\s]*(\d+\.?\d*)", data),
-        "First Sensation (cc)": extract_value(r"First Sensation[:\s]*(\d+\.?\d*)", data),
-        "Urge to Defecate (cc)": extract_value(r"Urge to Defecate[:\s]*(\d+\.?\d*)", data),
-        "Rectoanal Pressure Differential (mmHg)": extract_value(r"Rectoanal Pressure Differential[:\s]*(\d+\.?\d*)", data),
+        "Verge to Center Length (cm)": extract_value(r"Verge to center[:\s]*(\d+\.?\d*)", data),
+        "Residual Anal Pressure (mmHg)": extract_value(r"Residual anal pressure[:\s]*(\d+\.?\d*)", data),
+        "Anal Relaxation (%)": extract_value(r"Anal relaxation[:\s]*(\d+\.?\d*)", data),
+        "First Sensation (cc)": extract_value(r"First sensation[:\s]*(\d+\.?\d*)", data),
+        "Urge to Defecate (cc)": extract_value(r"Urge to defecate[:\s]*(\d+\.?\d*)", data),
+        "Rectoanal Pressure Differential (mmHg)": extract_value(r"Rectoanal pressure differential[:\s]*(\d+\.?\d*)", data),
         "RAIR": "Present" if "RAIR" in data else "Not Present",
-        "Indications": extract_value(r"Indications[:\s]*(.*)", data),
+        "Indications": categorize_indications(extract_value(r"Indications[:\s]*(.*)", data)),
         "Diagnoses": extract_value(r"Diagnoses \(London classification\)[:\s]*(.*)", data)
     }
+    
+    # Debugging: Print extracted values in Streamlit
+    st.write("### Extracted Data (Debugging)")
+    for key, value in extracted_data.items():
+        st.write(f"✅ {key}: {value}")
     
     # Convert extracted values to DataFrame
     df = pd.DataFrame([extracted_data], columns=column_names)
     
     # Display extracted data in Streamlit
-    st.write("### Extracted Data")
+    st.write("### Final Extracted Data")
     st.dataframe(df)
     
     # Provide download option

@@ -86,5 +86,3 @@ if uploaded_file:
     df.to_excel(output_excel_path, index=False)
     with open(output_excel_path, "rb") as f:
         st.download_button("Download Excel File", f, file_name="Processed_Data.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-   

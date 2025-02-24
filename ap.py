@@ -8,38 +8,39 @@ uploaded_file = st.file_uploader("Upload your text file", type=["txt"])
 if uploaded_file:
     data = uploaded_file.read().decode("utf-8").splitlines()
     
-    def extract_value(keyword, data, default="N/A"):
-        for line in data:
-            if keyword in line:
-                parts = line.split(keyword)
-                if len(parts) > 1:
-                    return parts[1].strip()
+    def extract_value(pattern, data, default="N/A"):
+        for i, line in enumerate(data):
+            if re.search(pattern, line):
+                # Check if the next line contains the value
+                if i + 1 < len(data) and re.match(r'^[0-9.-]+$', data[i + 1].strip()):
+                    return data[i + 1].strip()
+                return line.split(pattern)[-1].strip()
         return default
     
     # Extract patient details
-    patient_name = extract_value("Patient:", data)
-    gender = extract_value("Gender:", data)
-    dob = extract_value("DOB:", data)
-    physician = extract_value("Physician:", data)
-    exam_date = extract_value("Examination Date:", data)
+    patient_name = extract_value(r"Patient:", data)
+    gender = extract_value(r"Gender:", data)
+    dob = extract_value(r"DOB:", data)
+    physician = extract_value(r"Physician:", data)
+    exam_date = extract_value(r"Examination Date:", data)
     
     # Extract measurements
-    mean_sphincter_pressure_rectal = extract_value("Mean Sphincter Pressure (rectal ref.) (mmHg)", data)
-    max_sphincter_pressure_rectal = extract_value("Max. Sphincter Pressure (rectal ref.) (mmHg)", data)
-    max_sphincter_pressure_abs = extract_value("Max. Sphincter Pressure (abs. ref.) (mmHg)", data)
-    mean_sphincter_pressure_abs = extract_value("Mean Sphincter Pressure (abs. ref.) (mmHg)", data)
-    duration_squeeze = extract_value("Duration of sustained squeeze (sec)", data)
-    length_hpz = extract_value("Length of HPZ (cm)", data)
-    length_verge_center = extract_value("Length verge to center (cm)", data)
-    residual_anal_pressure = extract_value("Residual Anal Pressure (abs. ref.) (mmHg)", data)
-    percent_anal_relaxation = extract_value("Percent anal relaxation (%)", data)
-    first_sensation = extract_value("First sensation (cc)", data)
-    intrarectal_pressure = extract_value("Intrarectal pressure (mmHg)", data)
-    urge_to_defecate = extract_value("Urge to defecate (cc)", data)
-    rectoanal_pressure_diff = extract_value("Rectoanal pressure differential (mmHg)", data)
-    discomfort = extract_value("Discomfort (cc)", data)
-    min_rectal_compliance = extract_value("Minimum rectal compliance", data)
-    max_rectal_compliance = extract_value("Maximum rectal compliance", data)
+    mean_sphincter_pressure_rectal = extract_value(r"Mean Sphincter Pressure\(rectal ref.*\)", data)
+    max_sphincter_pressure_rectal = extract_value(r"Max\. Sphincter Pressure\(rectal ref.*\)", data)
+    max_sphincter_pressure_abs = extract_value(r"Max\. Sphincter Pressure\(abs\. ref.*\)", data)
+    mean_sphincter_pressure_abs = extract_value(r"Mean Sphincter Pressure\(abs\. ref.*\)", data)
+    duration_squeeze = extract_value(r"Duration of sustained squeeze.*", data)
+    length_hpz = extract_value(r"Length of HPZ.*", data)
+    length_verge_center = extract_value(r"Length verge to center.*", data)
+    residual_anal_pressure = extract_value(r"Residual Anal Pressure.*", data)
+    percent_anal_relaxation = extract_value(r"Percent anal relaxation.*", data)
+    first_sensation = extract_value(r"First sensation.*", data)
+    intrarectal_pressure = extract_value(r"Intrarectal pressure.*", data)
+    urge_to_defecate = extract_value(r"Urge to defecate.*", data)
+    rectoanal_pressure_diff = extract_value(r"Rectoanal pressure differential.*", data)
+    discomfort = extract_value(r"Discomfort.*", data)
+    min_rectal_compliance = extract_value(r"Minimum rectal compliance.*", data)
+    max_rectal_compliance = extract_value(r"Maximum rectal compliance.*", data)
     
     # Debugging: Display extracted values
     extracted_values = {
@@ -81,3 +82,4 @@ if uploaded_file:
     df.to_excel(output_excel_path, index=False)
     with open(output_excel_path, "rb") as f:
         st.download_button("Download Excel File", f, file_name="Processed_Data.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+

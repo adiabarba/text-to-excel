@@ -5,7 +5,7 @@ import re
 
 def extract_patient_data(uploaded_file):
     """
-    Extracts structured key-value pairs from a text file and organizes them into categories.
+    Extracts structured key-value pairs from a text file and correctly maps them to their headers.
     """
     file_content = uploaded_file.read().decode("utf-8")
     lines = file_content.split("\n")
@@ -65,8 +65,8 @@ def extract_patient_data(uploaded_file):
                 data[current_key] = next_line
 
     # Extract only the Patient ID (removing the name)
-    if "Patient" in data:
-        patient_info = data["Patient"].split() if data["Patient"] else []
+    if "Patient" in data and data["Patient"]:
+        patient_info = data["Patient"].split()
         patient_id = next((item for item in patient_info if item.isdigit()), None)
         data["Patient"] = patient_id if patient_id else "Unknown"
 
@@ -106,3 +106,9 @@ if uploaded_file is not None:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+    
+        
+        
+     
+    
+  

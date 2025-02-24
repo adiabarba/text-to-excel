@@ -12,10 +12,7 @@ if uploaded_file:
         for i, line in enumerate(data):
             match = re.search(pattern, line, re.IGNORECASE)
             if match:
-                # Check if the next line contains the value
-                if i + 1 < len(data) and re.match(r'^[0-9A-Za-z .:/-]+$', data[i + 1].strip()):
-                    return data[i + 1].strip()
-                return match.group(0).split(pattern)[-1].strip()
+                return match.group(1).strip()
         return default
     
     # Indication categories
@@ -38,7 +35,7 @@ if uploaded_file:
     
     # Extract required fields based on Book2.xlsx headers
     required_fields = [
-        "Patient Name", "Patient ID", "Gender", "Date of Birth", "Physician", "Operator", "Referring Physician", "Examination Date", "Date of Procedure",
+        "Patient Name", "Patient ID", "Gender", "Date of Birth", "Physician", "Operator", "Referring Physician", "Examination Date",
         "Height", "Weight", "Mean Sphincter Pressure (Rectal ref) (mmHg)", "Max Sphincter Pressure (Rectal ref) (mmHg)", 
         "Max Sphincter Pressure (Abs. ref) (mmHg)", "Mean Sphincter Pressure (Abs. ref) (mmHg)", "Duration of Squeeze (sec)", 
         "Length of HPZ (cm)", "Length verge to center (cm)", "Residual Anal Pressure (mmHg)", "Percent Anal Relaxation (%)", 
@@ -49,14 +46,13 @@ if uploaded_file:
     # Extract measurements
     extracted_values = {
         "Patient Name": extract_value(r"Patient:\s*(.*)", data),
-        "Patient ID": extract_value(r"\b\d{9}\b", data),
+        "Patient ID": extract_value(r"(\b\d{9}\b)", data),
         "Gender": extract_value(r"Gender:\s*(.*)", data),
         "Date of Birth": extract_value(r"DOB:\s*(.*)", data),
         "Physician": extract_value(r"Physician:\s*(.*)", data),
         "Operator": extract_value(r"Operator:\s*(.*)", data),
         "Referring Physician": extract_value(r"Referring Physician:\s*(.*)", data),
         "Examination Date": extract_value(r"Examination Date:\s*(.*)", data),
-        "Date of Procedure": extract_value(r"Examination Date:\s*(.*)", data),
         "Height": extract_value(r"Height:\s*(.*)", data),
         "Weight": extract_value(r"Weight:\s*(.*)", data),
         "Mean Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Mean Sphincter Pressure\(rectal ref.*\)\s*(\d+\.?\d*)", data),

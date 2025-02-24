@@ -4,13 +4,40 @@ import io
 
 def extract_patient_data(uploaded_file):
     """
-    Extracts key-value pairs from a structured text file and returns a DataFrame.
+    Extracts structured key-value pairs from a text file and organizes them into categories.
     """
-    # Read the uploaded file correctly
     file_content = uploaded_file.read().decode("utf-8")
     lines = file_content.split("\n")
 
-    data = {}
+    data = {
+        "Patient": None,
+        "Procedure Date": None,
+        "Resting": None,
+        "Squeeze": None,
+        "Mean Sphincter Pressure (rectal ref.) (mmHg)": None,
+        "Max Sphincter Pressure (rectal ref.) (mmHg)": None,
+        "Max Sphincter Pressure (abs. ref.) (mmHg)": None,
+        "Mean Sphincter Pressure (abs. ref.) (mmHg)": None,
+        "Duration of sustained squeeze (sec)": None,
+        "Length of HPZ (cm)": None,
+        "Length verge to center (cm)": None,
+        "Push (attempted defecation)": None,
+        "Balloon Inflation": None,
+        "Residual Anal Pressure (abs. ref.) (mmHg)": None,
+        "RAIR": None,
+        "Percent Anal Relaxation (%)": None,
+        "First Sensation (cc)": None,
+        "Intrarectal Pressure (mmHg)": None,
+        "Urge to Defecate (cc)": None,
+        "Rectoanal Pressure Differential (mmHg)": None,
+        "Discomfort (cc)": None,
+        "Minimum Rectal Compliance": None,
+        "Maximum Rectal Compliance": None,
+        "Procedure Summary": None,
+        "Indications": None,
+        "Findings": None
+    }
+
     current_key = None
     current_value = ""
 
@@ -29,7 +56,7 @@ def extract_patient_data(uploaded_file):
             if current_key:
                 current_value += " " + line
 
-    # Storing the last key-value pair
+    # Store the last key-value pair
     if current_key and current_value:
         data[current_key] = current_value.strip()
 
@@ -39,12 +66,18 @@ def extract_patient_data(uploaded_file):
         patient_id = next((item for item in patient_info if item.isdigit()), None)
         data["Patient"] = patient_id if patient_id else "Unknown"
 
+    # Extract "Procedure Date" from the file
+    if "Procedure" in data and data["Procedure"]:
+        date_parts = [part for part in data["Procedure"].split() if "/" in part]
+        if date_parts:
+            data["Procedure Date"] = date_parts[0]
+
     # Convert to DataFrame
     df = pd.DataFrame([data])
     return df
 
 # Streamlit Web App
-st.title("📂 Convert TXT to Excel")
+st.title("📂 Convert TXT to Excel (Structured Output)")
 st.write("Upload your structured text file, and it will be automatically converted into an Excel file.")
 
 uploaded_file = st.file_uploader("Choose a text file", type=["txt"])
@@ -63,8 +96,11 @@ if uploaded_file is not None:
     
     # Provide a download button
     st.download_button(
-        label="📥 Download Excel File",
+        label="📥 Download Structured Excel File",
         data=output,
-        file_name="Patient_Data.xlsx",
+        file_name="Structured_Patient_Data.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+  
+      

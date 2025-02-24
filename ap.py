@@ -15,7 +15,7 @@ def extract_patient_data(uploaded_file):
         "Patient": None,
         "Gender": None,
         "DOB": None,
-        "Procedure Date": None,
+        "Procedure date": None,
         "Physician": None,
         "Weight": None,
         "Height": None,
@@ -40,8 +40,9 @@ def extract_patient_data(uploaded_file):
         "Discomfort (cc)": None,
         "Minimum Rectal Compliance": None,
         "Maximum Rectal Compliance": None,
-        "Indications": None,  # Will be categorized
-        "Findings": None  # Only "Diagnoses (London classification)"
+        "Indications": None,  # Categorized values
+        "Findings": None,  # Diagnoses (London classification)
+        "Balloon expulsion test": None
     }
 
     current_key = None
@@ -107,6 +108,10 @@ def extract_patient_data(uploaded_file):
                 continue
             required_titles["Findings"] += line + " "  # Store findings
 
+        # Capture Balloon Expulsion Test
+        if "Balloon expulsion test" in line.lower():
+            required_titles["Balloon expulsion test"] = line.strip()
+
     # Extract only the Patient ID (removing the name)
     if "Patient" in required_titles and required_titles["Patient"]:
         patient_info = required_titles["Patient"].split()
@@ -116,7 +121,7 @@ def extract_patient_data(uploaded_file):
     # Extract "Procedure Date"
     for line in lines:
         if "/" in line and len(line.split("/")) == 3:  # Looking for DD/MM/YYYY format
-            required_titles["Procedure Date"] = line.strip()
+            required_titles["Procedure date"] = line.strip()
             break
 
     # Ensure missing values remain empty (not "None")
@@ -154,8 +159,6 @@ if uploaded_file is not None:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    
-        
         
      
     

@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 import io
 import re
+from collections import defaultdict
 
 def extract_patient_data(uploaded_file):
     """
@@ -11,35 +12,7 @@ def extract_patient_data(uploaded_file):
     lines = file_content.split("\n")
 
     # Define categories and expected numeric fields
-    data = {
-        "Patient": None,
-        "Procedure Date": None,
-        "Resting": None,
-        "Squeeze": None,
-        "Mean Sphincter Pressure (rectal ref.) (mmHg)": None,
-        "Max Sphincter Pressure (rectal ref.) (mmHg)": None,
-        "Max Sphincter Pressure (abs. ref.) (mmHg)": None,
-        "Mean Sphincter Pressure (abs. ref.) (mmHg)": None,
-        "Duration of sustained squeeze (sec)": None,
-        "Length of HPZ (cm)": None,
-        "Length verge to center (cm)": None,
-        "Push (attempted defecation)": None,
-        "Balloon Inflation": None,
-        "Residual Anal Pressure (abs. ref.) (mmHg)": None,
-        "RAIR": None,
-        "Percent Anal Relaxation (%)": None,
-        "First Sensation (cc)": None,
-        "Intrarectal Pressure (mmHg)": None,
-        "Urge to Defecate (cc)": None,
-        "Rectoanal Pressure Differential (mmHg)": None,
-        "Discomfort (cc)": None,
-        "Minimum Rectal Compliance": None,
-        "Maximum Rectal Compliance": None,
-        "Procedure Summary": None,
-        "Indications": None,
-        "Findings": None
-    }
-
+    data = defaultdict(list)  # Using list to handle multiple values for same key
     current_key = None
 
     for i in range(len(lines)):
@@ -49,39 +22,39 @@ def extract_patient_data(uploaded_file):
             continue
 
         # Detect category titles
-        if ":" in line:
-            current_key = line.replace(":", "").strip()
-        else:
-            # If it's a numeric value, store it under the last detected key
-            number_match = re.search(r"([\d]+\.\d+|\d+)", line)
-            if number_match and current_key in data:
-                data[current_key] = number_match.group(1)
-                current_key = None  # Reset key after storing a value
+        if ":" in line or "(" in line or "Procedure" in line or "Findings" in line:
+            current_key = re.sub(r"[:\(\)]", "", line).strip()  # Remove colons and parentheses
+        elif current_key:
+            # Store the corresponding value under the last detected key
+            number_match = re.match(r"^-?\d+(\.\d+)?$", line)  # Match numbers (including negative & decimals)
+            if number_match:
+                data[current_key].append(line)  # Store all values under the correct key
+            else:
+                # Handle multi-line fields like "Procedure Summary"
+                if current_key in ["Procedure", "Findings", "Indications"]:
+                    data[current_key].append(line)
 
-        # If next line contains a number but no new key, assign it to the last found key
-        if i < len(lines) - 1:
-            next_line = lines[i + 1].strip()
-            if re.match(r"^[\d]+\.\d+|[\d]+$", next_line) and current_key in data:
-                data[current_key] = next_line
+    # Convert lists to strings (if multiple values exist, join them)
+    formatted_data = {key: ", ".join(values) if values else None for key, values in data.items()}
 
     # Extract only the Patient ID (removing the name)
-    if "Patient" in data and data["Patient"]:
-        patient_info = data["Patient"].split()
+    if "Patient" in formatted_data:
+        patient_info = formatted_data["Patient"].split() if formatted_data["Patient"] else []
         patient_id = next((item for item in patient_info if item.isdigit()), None)
-        data["Patient"] = patient_id if patient_id else "Unknown"
+        formatted_data["Patient"] = patient_id if patient_id else "Unknown"
 
     # Extract "Procedure Date" from the file
     for line in lines:
         if "/" in line and len(line.split("/")) == 3:  # Looking for DD/MM/YYYY format
-            data["Procedure Date"] = line.strip()
+            formatted_data["Procedure Date"] = line.strip()
             break
 
     # Convert to DataFrame
-    df = pd.DataFrame([data])
+    df = pd.DataFrame([formatted_data])
     return df
 
 # Streamlit Web App
-st.title("📂 Convert TXT to Excel (Corrected Values)")
+st.title("📂 Convert TXT to Excel (Fully Fixed Version)")
 st.write("Upload your structured text file, and it will be automatically converted into an Excel file with all values correctly assigned.")
 
 uploaded_file = st.file_uploader("Choose a text file", type=["txt"])
@@ -100,12 +73,18 @@ if uploaded_file is not None:
     
     # Provide a download button
     st.download_button(
-        label="📥 Download Structured Excel File with Values",
+        label="📥 Download Fixed Structured Excel File",
         data=output,
-        file_name="Structured_Patient_Data.xlsx",
+        file_name="Structured_Patient_Data_Fixed.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+       
+   
+          
+       
+
+   
     
         
         

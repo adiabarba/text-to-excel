@@ -60,6 +60,13 @@ if uploaded_file:
         "Max Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure.*?\(rectal ref.*?\)[:\s]*(\d+\.?\d*)", data),
         "Max Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure.*?\(abs\. ref.*?\)[:\s]*(\d+\.?\d*)", data),
         "Mean Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Mean Sphincter Pressure.*?\(abs\. ref.*?\)[:\s]*(\d+\.?\d*)", data),
+        "Length of HPZ (cm)": extract_value(r"Length of HPZ[:\s]*(\d+\.?\d*)", data),
+        "Verge to Center Length (cm)": extract_value(r"Verge to center[:\s]*(\d+\.?\d*)", data),
+        "Residual Anal Pressure (mmHg)": extract_value(r"Residual anal pressure[:\s]*(\d+\.?\d*)", data),
+        "Anal Relaxation (%)": extract_value(r"Anal relaxation[:\s]*(\d+\.?\d*)", data),
+        "First Sensation (cc)": extract_value(r"First sensation[:\s]*(\d+\.?\d*)", data),
+        "Urge to Defecate (cc)": extract_value(r"Urge to defecate[:\s]*(\d+\.?\d*)", data),
+        "Rectoanal Pressure Differential (mmHg)": extract_value(r"Rectoanal pressure differential[:\s]*(\d+\.?\d*)", data),
         "RAIR": "Present" if any("RAIR" in line for line in data) else "Not Present",
         "Indications": categorize_indications(extract_value(r"Indications[:\s]*(.*)", data)),
         "Diagnoses": extract_value(r"Diagnoses \(London classification\)[:\s]*(.*)", data)

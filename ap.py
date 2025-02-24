@@ -47,7 +47,7 @@ def extract_patient_data(uploaded_file):
 
     capture_findings = False  
     indications_found = []
-    rair_found = False  # Track RAIR status
+    rair_found = False  
 
     # Define multiple Indications to check
     indication_options = {
@@ -163,3 +163,4 @@ if uploaded_file is not None:
         file_name="Final_Patient_Data.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+

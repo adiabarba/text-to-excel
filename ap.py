@@ -17,9 +17,22 @@ if uploaded_file:
                 return re.sub(pattern, '', line).strip()
         return default
     
+    def categorize_indications(text):
+        categories = {
+            "constipation": "Constipation",
+            "incontinence": "Incontinence",
+            "hirschsprung": "s/p Hirschprung",
+            "anorectal malformation": "Anorectal malformation",
+            "anal tear": "Anal Tear"
+        }
+        for key, value in categories.items():
+            if key in text.lower():
+                return value
+        return "Other"
+    
     # Extract required fields based on Book2.xlsx headers
     required_fields = [
-        "Patient Name", "Gender", "Date of Birth", "Physician", "Operator", "Referring Physician", "Examination Date", 
+        "Patient Name", "Patient ID", "Gender", "Date of Birth", "Physician", "Operator", "Referring Physician", "Examination Date", "Date of Procedure",
         "Height", "Weight", "Mean Sphincter Pressure (Rectal ref) (mmHg)", "Max Sphincter Pressure (Rectal ref) (mmHg)", 
         "Max Sphincter Pressure (Abs. ref) (mmHg)", "Mean Sphincter Pressure (Abs. ref) (mmHg)", "Duration of Squeeze (sec)", 
         "Length of HPZ (cm)", "Length verge to center (cm)", "Residual Anal Pressure (mmHg)", "Percent Anal Relaxation (%)", 
@@ -30,12 +43,14 @@ if uploaded_file:
     # Extract measurements
     extracted_values = {
         "Patient Name": extract_value(r"Patient:", data),
+        "Patient ID": extract_value(r"\d{9}", data),
         "Gender": extract_value(r"Gender:", data),
         "Date of Birth": extract_value(r"DOB:", data),
         "Physician": extract_value(r"Physician:", data),
         "Operator": extract_value(r"Operator:", data),
         "Referring Physician": extract_value(r"Referring Physician:", data),
         "Examination Date": extract_value(r"Examination Date:", data),
+        "Date of Procedure": extract_value(r"Examination Date:", data),
         "Height": extract_value(r"Height:", data),
         "Weight": extract_value(r"Weight:", data),
         "Mean Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Mean Sphincter Pressure\(rectal ref.*\)", data),
@@ -55,7 +70,7 @@ if uploaded_file:
         "Min Rectal Compliance": extract_value(r"Minimum rectal compliance.*", data),
         "Max Rectal Compliance": extract_value(r"Maximum rectal compliance.*", data),
         "RAIR": "Present" if "RAIR" in data else "Not Present",
-        "Indications": extract_value(r"Indications", data) if any(kw in extract_value(r"Indications", data).lower() for kw in ["tear", "sphincter", "dysfunction"]) else "Other",
+        "Indications": categorize_indications(extract_value(r"Indications", data)),
         "Diagnoses": extract_value(r"Diagnoses \(London classification\).*", data)
     }
     
@@ -77,5 +92,4 @@ if uploaded_file:
     df.to_excel(output_excel_path, index=False)
     with open(output_excel_path, "rb") as f:
         st.download_button("Download Excel File", f, file_name="Processed_Data.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
 

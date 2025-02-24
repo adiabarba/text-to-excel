@@ -46,17 +46,7 @@ def extract_patient_data(uploaded_file):
     }
 
     current_key = None
-    capture_findings = False  # Flag for capturing "Findings"
-
-    # Indication categories
-    indication_options = {
-        "Constipation": "Constipation",
-        "Incontinence": "Incontinence",
-        "Hirschsprung": "s/p Hirschprung",
-        "Anorectal malformation": "Anorectal malformation",
-        "Perianal tear": "Perianal tear",
-        "Spina bifida": "Spina bifida"
-    }
+    capture_findings = False  
 
     for i in range(len(lines)):
         line = lines[i].strip()
@@ -64,67 +54,64 @@ def extract_patient_data(uploaded_file):
         if not line:
             continue
 
-        # Extract key-value pairs, even when values are on the next line
-        if ":" in line or "(" in line:
-            key = re.sub(r"[:\(\)]", "", line).strip()
-            if key in required_titles:
-                current_key = key
-                continue  # Move to next line to capture value
+        # Extract Patient ID (only numbers)
+        if "Patient:" in line:
+            patient_info = lines[i + 1].strip()
+            patient_id = re.search(r"\d+", patient_info)
+            required_titles["Patient"] = patient_id.group(0) if patient_id else "Unknown"
 
-        if current_key:
-            # Capture numeric values
-            number_match = re.search(r"^-?\d+(\.\d+)?$", line)  # Match numbers (including decimals)
-            if number_match:
-                required_titles[current_key] = number_match.group(0)  # Store first number
-            else:
-                required_titles[current_key] = line  # Store text if it's not a number
-            current_key = None  # Reset key to avoid overwriting
+        # Extract Physician (skip "Referring Physician" and "Operator")
+        if "Physician:" in line:
+            required_titles["Physician"] = lines[i + 1].strip()
+        if "Operator:" in line:
+            required_titles["Physician"] = lines[i + 1].strip()  
 
-        # Extract RAIR as "Present" or "Not Present"
-        if "RAIR" in line:
-            if "present" in line.lower():
-                required_titles["RAIR"] = "Present"
-            elif "not present" in line.lower() or "absent" in line.lower():
-                required_titles["RAIR"] = "Not Present"
+        # Extract Procedure Date
+        if "Examination Date:" in line:
+            required_titles["Procedure date"] = lines[i + 1].strip()
 
-        # Extract indications (categorizing them)
-        for keyword, label in indication_options.items():
-            if keyword.lower() in line.lower():
-                required_titles["Indications"] = label
+        # Extract Gender
+        if "Gender:" in line:
+            required_titles["Gender"] = lines[i + 1].strip()
 
-        # If no matching indication is found, set to "Other"
-        if required_titles["Indications"] is None:
-            required_titles["Indications"] = "Other"
+        # Extract DOB
+        if "DOB:" in line:
+            required_titles["DOB"] = lines[i + 1].strip()
 
-        # Capture "Findings" under "Diagnoses (London classification)"
+        # Extract Indications (only "S/p perineal tear")
+        if "Indications" in line:
+            required_titles["Indications"] = "S/p perineal tear"
+
+        # Extract Findings (Diagnoses)
         if "Diagnoses (London classification)" in line:
-            capture_findings = True  # Start capturing findings
-            required_titles["Findings"] = ""  # Initialize findings
+            capture_findings = True
+            required_titles["Findings"] = ""
             continue
 
         if capture_findings:
-            if "Additional findings" in line:  # Stop capturing
+            if "Resting Pressure" in line:  
                 capture_findings = False
                 continue
-            required_titles["Findings"] += line + " "  # Store findings
+            required_titles["Findings"] += line + " "
 
-        # Capture Balloon Expulsion Test
-        if "Balloon expulsion test" in line.lower():
-            required_titles["Balloon expulsion test"] = line.strip()
+        # Extract numerical values for measurements
+        if any(keyword in line for keyword in required_titles.keys()):
+            current_key = line.replace(":", "").strip()
+            continue
 
-    # Extract only the Patient ID (removing the name)
-    if "Patient" in required_titles and required_titles["Patient"]:
-        patient_info = required_titles["Patient"].split()
-        patient_id = next((item for item in patient_info if item.isdigit()), None)
-        required_titles["Patient"] = patient_id if patient_id else "Unknown"
+        if current_key and re.match(r"^-?\d+(\.\d+)?$", line):
+            required_titles[current_key] = line.strip()
+            current_key = None  
 
-    # Extract "Procedure Date"
-    for line in lines:
-        if "/" in line and len(line.split("/")) == 3:  # Looking for DD/MM/YYYY format
-            required_titles["Procedure date"] = line.strip()
-            break
+        # Extract RAIR status
+        if "RAIR" in line:
+            required_titles["RAIR"] = "Present" if "Present" in lines[i + 1] else "Not Present"
 
-    # Ensure missing values remain empty (not "None")
+        # Extract Balloon Expulsion Test
+        if "Balloon expulsion test" in line:
+            required_titles["Balloon expulsion test"] = line.split(":")[1].strip()
+
+    # Convert None values to empty strings
     for key in required_titles:
         if required_titles[key] is None:
             required_titles[key] = ""
@@ -134,7 +121,7 @@ def extract_patient_data(uploaded_file):
     return df
 
 # Streamlit Web App
-st.title("📂 Convert TXT to Excel (Final Version with All Measurements)")
+st.title("📂 Convert TXT to Excel (Final Version with All Data)")
 st.write("Upload your structured text file, and it will be automatically converted into an Excel file with all values correctly assigned.")
 
 uploaded_file = st.file_uploader("Choose a text file", type=["txt"])
@@ -153,11 +140,10 @@ if uploaded_file is not None:
     
     # Provide a download button
     st.download_button(
-        label="📥 Download Final Excel File with All Measurements",
+        label="📥 Download Final Excel File with All Data",
         data=output,
         file_name="Final_Patient_Data.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    
   

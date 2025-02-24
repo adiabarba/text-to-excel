@@ -163,4 +163,3 @@ if uploaded_file is not None:
         file_name="Final_Patient_Data.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-

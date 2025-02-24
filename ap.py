@@ -2,11 +2,14 @@ import pandas as pd
 import streamlit as st
 import io
 
-def extract_patient_data(file_content):
+def extract_patient_data(uploaded_file):
     """
     Extracts key-value pairs from a structured text file and returns a DataFrame.
     """
-    lines = file_content.decode("utf-8").split("\n")
+    # Read the uploaded file correctly
+    file_content = uploaded_file.read().decode("utf-8")
+    lines = file_content.split("\n")
+
     data = {}
     current_key = None
     current_value = ""
@@ -48,6 +51,8 @@ uploaded_file = st.file_uploader("Choose a text file", type=["txt"])
 
 if uploaded_file is not None:
     st.success("✅ File uploaded successfully!")
+    
+    # Call the function with the correct file format
     df = extract_patient_data(uploaded_file)
     
     # Save to Excel in memory

@@ -45,8 +45,9 @@ def extract_patient_data(uploaded_file):
         "Balloon expulsion test": None
     }
 
-    current_key = None
     capture_findings = False  
+    indications_found = []
+    rair_found = False  # Track RAIR status
 
     # Define multiple Indications to check
     indication_options = {
@@ -58,11 +59,8 @@ def extract_patient_data(uploaded_file):
         "Spina bifida": "Spina bifida"
     }
 
-    indications_found = []
-    rair_found = False  # Track RAIR status
-
-    for i in range(len(lines)):
-        line = lines[i].strip()
+    for i, line in enumerate(lines):
+        line = line.strip()
 
         if not line:
             continue
@@ -72,25 +70,21 @@ def extract_patient_data(uploaded_file):
             patient_info = re.findall(r"\d+", lines[i + 1])
             required_titles["Patient"] = patient_info[0] if patient_info else ""
 
-        # Extract Physician (skip "Referring Physician" and "Operator")
+        # Extract Gender, DOB, Procedure Date
+        if "Gender:" in line:
+            required_titles["Gender"] = lines[i + 1].strip()
+        if "DOB:" in line:
+            required_titles["DOB"] = lines[i + 1].strip()
+        if "Examination Date:" in line or "Procedure Date:" in line:
+            required_titles["Procedure date"] = lines[i + 1].strip()
+
+        # Extract Physician (ignoring "Operator" and "Referring Physician")
         if "Physician:" in line:
             required_titles["Physician"] = lines[i + 1].strip()
         if "Operator:" in line:
             required_titles["Physician"] = lines[i + 1].strip()  
 
-        # Extract Procedure Date
-        if "Examination Date:" in line or "Procedure Date:" in line:
-            required_titles["Procedure date"] = lines[i + 1].strip()
-
-        # Extract Gender
-        if "Gender:" in line:
-            required_titles["Gender"] = lines[i + 1].strip()
-
-        # Extract DOB
-        if "DOB:" in line:
-            required_titles["DOB"] = lines[i + 1].strip()
-
-        # Extract Indications (matching multiple options)
+        # Extract Indications (multiple options allowed)
         for keyword, label in indication_options.items():
             if keyword.lower() in line.lower():
                 indications_found.append(label)
@@ -109,13 +103,11 @@ def extract_patient_data(uploaded_file):
 
         # Extract numerical values for measurements
         for key in required_titles.keys():
-            if key in line:
-                current_key = key
-                continue
-
-        if current_key and re.match(r"^-?\d+(\.\d+)?$", line):
-            required_titles[current_key] = line.strip()
-            current_key = None  
+            if key.lower() in line.lower():
+                value_match = re.search(r"\d+(\.\d+)?", line)
+                if value_match:
+                    required_titles[key] = value_match.group()
+                break
 
         # Extract RAIR status properly
         if "RAIR" in line:

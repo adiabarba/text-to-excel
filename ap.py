@@ -8,18 +8,21 @@ uploaded_file = st.file_uploader("Upload your text file", type=["txt"])
 if uploaded_file:
     data = uploaded_file.read().decode("utf-8").splitlines()
     
+    # Debugging: Print the raw text file to check structure
+    st.write("### Full Text Debugging: First 50 Lines")
+    for i, line in enumerate(data[:50]):
+        st.write(f"Line {i+1}: {line}")
+    
     def extract_value(pattern, data, default="N/A"):
         for i, line in enumerate(data):
             match = re.search(pattern, line, re.IGNORECASE)
-            if match:
-                return match.group(1).strip() if match.group(1) else default
-            if re.search(pattern, line, re.IGNORECASE):  # Handle next-line values
-                return data[i + 1].strip() if i + 1 < len(data) else default
+            if match and match.group(1):
+                return match.group(1).strip()
+            if re.search(pattern, line, re.IGNORECASE) and i + 1 < len(data):
+                next_line = data[i + 1].strip()
+                if next_line:
+                    return next_line
         return default
-    
-    # Debugging: Print the raw text file to check structure
-    st.write("### Debugging: Raw Text File Content")
-    st.text("\n".join(data[:50]))  # Show first 50 lines for analysis
     
     # Indication categories
     indication_options = {
@@ -44,7 +47,7 @@ if uploaded_file:
     # Extract required fields
     extracted_values = {
         "Patient Name": extract_value(r"Patient[:\s]*(.*)", data),
-        "Patient ID": extract_value(r"Patient ID[:\s]*(\d{9})", data),
+        "Patient ID": extract_value(r"Patient ID[:\s]*(\d+)", data),
         "Gender": extract_value(r"Gender[:\s]*(.*)", data),
         "Date of Birth": extract_value(r"(?:DOB|Date of Birth)[:\s]*(.*)", data),
         "Physician": extract_value(r"Physician[:\s]*(.*)", data),
@@ -64,7 +67,11 @@ if uploaded_file:
     
     # Debugging: Display extracted values before writing to Excel
     st.write("### Extracted Data (Debugging)")
-    st.json(extracted_values)
+    for key, value in extracted_values.items():
+        if value == "N/A":
+            st.write(f"❌ No match found for: {key}")
+        else:
+            st.write(f"✅ Extracted {key}: {value}")
     
     # Create a dataframe
     df = pd.DataFrame([extracted_values])

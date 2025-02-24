@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 import io
+import re
 
 def extract_patient_data(uploaded_file):
     """
@@ -9,6 +10,7 @@ def extract_patient_data(uploaded_file):
     file_content = uploaded_file.read().decode("utf-8")
     lines = file_content.split("\n")
 
+    # Define categories and expected numeric fields
     data = {
         "Patient": None,
         "Procedure Date": None,
@@ -47,14 +49,20 @@ def extract_patient_data(uploaded_file):
         if not line:
             continue
         
+        # Detect numbers and match them with categories
+        number_match = re.search(r"([\d]+\.\d+|\d+)", line)
+        if number_match:
+            extracted_number = number_match.group(1)
+        
         if ":" in line:  # Detecting keys
             if current_key and current_value:
                 data[current_key] = current_value.strip()
             current_key = line.replace(":", "").strip()
             current_value = ""
-        else:  # Assigning values
-            if current_key:
-                current_value += " " + line
+        elif current_key:
+            current_value += " " + line
+            if number_match and current_key in data:  # Assign detected numbers
+                data[current_key] = extracted_number
 
     # Store the last key-value pair
     if current_key and current_value:
@@ -62,7 +70,7 @@ def extract_patient_data(uploaded_file):
 
     # Extract only the Patient ID (removing the name)
     if "Patient" in data:
-        patient_info = data["Patient"].split()
+        patient_info = data["Patient"].split() if data["Patient"] else []
         patient_id = next((item for item in patient_info if item.isdigit()), None)
         data["Patient"] = patient_id if patient_id else "Unknown"
 
@@ -77,8 +85,8 @@ def extract_patient_data(uploaded_file):
     return df
 
 # Streamlit Web App
-st.title("📂 Convert TXT to Excel (Structured Output)")
-st.write("Upload your structured text file, and it will be automatically converted into an Excel file.")
+st.title("📂 Convert TXT to Excel (Structured with Numbers)")
+st.write("Upload your structured text file, and it will be automatically converted into an Excel file with all values correctly assigned.")
 
 uploaded_file = st.file_uploader("Choose a text file", type=["txt"])
 
@@ -96,11 +104,15 @@ if uploaded_file is not None:
     
     # Provide a download button
     st.download_button(
-        label="📥 Download Structured Excel File",
+        label="📥 Download Structured Excel File with Values",
         data=output,
         file_name="Structured_Patient_Data.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+        
+               
+            
+    
   
       

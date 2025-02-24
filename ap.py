@@ -5,7 +5,7 @@ import re
 
 def extract_patient_data(uploaded_file):
     """
-    Extracts structured key-value pairs from a text file and maps them to the specified headers.
+    Extracts structured key-value pairs from a text file and maps them only to the specified headers.
     """
     file_content = uploaded_file.read().decode("utf-8")
     lines = file_content.split("\n")
@@ -48,6 +48,19 @@ def extract_patient_data(uploaded_file):
     current_key = None
     capture_findings = False  
 
+    # Define multiple Indications to check
+    indication_options = {
+        "Constipation": "Constipation",
+        "Incontinence": "Incontinence",
+        "Hirschsprung": "s/p Hirschprung",
+        "Anorectal malformation": "Anorectal malformation",
+        "Perianal tear": "Perianal tear",
+        "Spina bifida": "Spina bifida"
+    }
+
+    indications_found = []
+    rair_found = False  # Track RAIR status
+
     for i in range(len(lines)):
         line = lines[i].strip()
 
@@ -56,9 +69,8 @@ def extract_patient_data(uploaded_file):
 
         # Extract Patient ID (only numbers)
         if "Patient:" in line:
-            patient_info = lines[i + 1].strip()
-            patient_id = re.search(r"\d+", patient_info)
-            required_titles["Patient"] = patient_id.group(0) if patient_id else "Unknown"
+            patient_info = re.findall(r"\d+", lines[i + 1])
+            required_titles["Patient"] = patient_info[0] if patient_info else ""
 
         # Extract Physician (skip "Referring Physician" and "Operator")
         if "Physician:" in line:
@@ -67,7 +79,7 @@ def extract_patient_data(uploaded_file):
             required_titles["Physician"] = lines[i + 1].strip()  
 
         # Extract Procedure Date
-        if "Examination Date:" in line:
+        if "Examination Date:" in line or "Procedure Date:" in line:
             required_titles["Procedure date"] = lines[i + 1].strip()
 
         # Extract Gender
@@ -78,9 +90,10 @@ def extract_patient_data(uploaded_file):
         if "DOB:" in line:
             required_titles["DOB"] = lines[i + 1].strip()
 
-        # Extract Indications (only "S/p perineal tear")
-        if "Indications" in line:
-            required_titles["Indications"] = "S/p perineal tear"
+        # Extract Indications (matching multiple options)
+        for keyword, label in indication_options.items():
+            if keyword.lower() in line.lower():
+                indications_found.append(label)
 
         # Extract Findings (Diagnoses)
         if "Diagnoses (London classification)" in line:
@@ -89,27 +102,40 @@ def extract_patient_data(uploaded_file):
             continue
 
         if capture_findings:
-            if "Resting Pressure" in line:  
+            if "Additional findings" in line:  
                 capture_findings = False
                 continue
             required_titles["Findings"] += line + " "
 
         # Extract numerical values for measurements
-        if any(keyword in line for keyword in required_titles.keys()):
-            current_key = line.replace(":", "").strip()
-            continue
+        for key in required_titles.keys():
+            if key in line:
+                current_key = key
+                continue
 
         if current_key and re.match(r"^-?\d+(\.\d+)?$", line):
             required_titles[current_key] = line.strip()
             current_key = None  
 
-        # Extract RAIR status
+        # Extract RAIR status properly
         if "RAIR" in line:
-            required_titles["RAIR"] = "Present" if "Present" in lines[i + 1] else "Not Present"
+            if "present" in line.lower():
+                required_titles["RAIR"] = "Present"
+                rair_found = True
+            elif "not present" in line.lower() or "absent" in line.lower():
+                required_titles["RAIR"] = "Not Present"
+                rair_found = True
 
         # Extract Balloon Expulsion Test
-        if "Balloon expulsion test" in line:
+        if "Balloon expulsion test" in line.lower():
             required_titles["Balloon expulsion test"] = line.split(":")[1].strip()
+
+    # Store Indications (combine multiple found options or use "Other" if none found)
+    required_titles["Indications"] = ", ".join(indications_found) if indications_found else "Other"
+
+    # Ensure RAIR is marked "Not Present" if no mention was found
+    if not rair_found:
+        required_titles["RAIR"] = "Not Present"
 
     # Convert None values to empty strings
     for key in required_titles:
@@ -145,5 +171,3 @@ if uploaded_file is not None:
         file_name="Final_Patient_Data.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
-  

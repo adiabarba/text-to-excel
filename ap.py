@@ -24,7 +24,7 @@ if uploaded_file:
                     return next_line
         return default
     
-    # Indication categories
+    # Indication categories with improved matching
     indication_options = {
         "constipation": "Constipation",
         "incontinence": "Incontinence",
@@ -44,10 +44,10 @@ if uploaded_file:
                 return value
         return "Other"
     
-    # Extract required fields
+    # Extract required fields with improved regex patterns
     extracted_values = {
         "Patient Name": extract_value(r"Patient[:\s]*(.*)", data),
-        "Patient ID": extract_value(r"Patient ID[:\s]*(\d+)", data),
+        "Patient ID": extract_value(r"(?:Patient ID|ID Number)[:\s]*(\w+)", data),  # More flexible pattern
         "Gender": extract_value(r"Gender[:\s]*(.*)", data),
         "Date of Birth": extract_value(r"(?:DOB|Date of Birth)[:\s]*(.*)", data),
         "Physician": extract_value(r"Physician[:\s]*(.*)", data),
@@ -92,3 +92,4 @@ if uploaded_file:
     df.to_excel(output_excel_path, index=False)
     with open(output_excel_path, "rb") as f:
         st.download_button("Download Excel File", f, file_name="Processed_Data.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+

@@ -12,7 +12,9 @@ if uploaded_file:
         for i, line in enumerate(data):
             match = re.search(pattern, line, re.IGNORECASE)
             if match:
-                return match.group(1).strip()
+                value = match.group(1).strip()
+                if value:
+                    return value
         return default
     
     # Indication categories
@@ -33,20 +35,10 @@ if uploaded_file:
                 return value
         return "Other"
     
-    # Extract required fields based on Book2.xlsx headers
-    required_fields = [
-        "Patient Name", "Patient ID", "Gender", "Date of Birth", "Physician", "Operator", "Referring Physician", "Examination Date",
-        "Height", "Weight", "Mean Sphincter Pressure (Rectal ref) (mmHg)", "Max Sphincter Pressure (Rectal ref) (mmHg)", 
-        "Max Sphincter Pressure (Abs. ref) (mmHg)", "Mean Sphincter Pressure (Abs. ref) (mmHg)", "Duration of Squeeze (sec)", 
-        "Length of HPZ (cm)", "Length verge to center (cm)", "Residual Anal Pressure (mmHg)", "Percent Anal Relaxation (%)", 
-        "First Sensation (cc)", "Intrarectal Pressure (mmHg)", "Urge to Defecate (cc)", "Rectoanal Pressure Differential (mmHg)", 
-        "Discomfort (cc)", "Min Rectal Compliance", "Max Rectal Compliance", "RAIR", "Indications", "Diagnoses"
-    ]
-    
-    # Extract measurements
+    # Extract required fields
     extracted_values = {
         "Patient Name": extract_value(r"Patient:\s*(.*)", data),
-        "Patient ID": extract_value(r"(\b\d{9}\b)", data),
+        "Patient ID": extract_value(r"Patient ID:\s*(\d{9})", data),
         "Gender": extract_value(r"Gender:\s*(.*)", data),
         "Date of Birth": extract_value(r"DOB:\s*(.*)", data),
         "Physician": extract_value(r"Physician:\s*(.*)", data),
@@ -55,30 +47,28 @@ if uploaded_file:
         "Examination Date": extract_value(r"Examination Date:\s*(.*)", data),
         "Height": extract_value(r"Height:\s*(.*)", data),
         "Weight": extract_value(r"Weight:\s*(.*)", data),
-        "Mean Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Mean Sphincter Pressure\(rectal ref.*\)\s*(\d+\.?\d*)", data),
-        "Max Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure\(rectal ref.*\)\s*(\d+\.?\d*)", data),
-        "Max Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure\(abs\. ref.*\)\s*(\d+\.?\d*)", data),
-        "Mean Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Mean Sphincter Pressure\(abs\. ref.*\)\s*(\d+\.?\d*)", data),
-        "Duration of Squeeze (sec)": extract_value(r"Duration of sustained squeeze.*\s*(\d+\.?\d*)", data),
-        "Length of HPZ (cm)": extract_value(r"Length of HPZ.*\s*(\d+\.?\d*)", data),
-        "Length verge to center (cm)": extract_value(r"Length verge to center.*\s*(\d+\.?\d*)", data),
-        "Residual Anal Pressure (mmHg)": extract_value(r"Residual Anal Pressure.*\s*(\d+\.?\d*)", data),
-        "Percent Anal Relaxation (%)": extract_value(r"Percent anal relaxation.*\s*(\d+\.?\d*)", data),
-        "First Sensation (cc)": extract_value(r"First sensation.*\s*(\d+\.?\d*)", data),
-        "Intrarectal Pressure (mmHg)": extract_value(r"Intrarectal pressure.*\s*(\d+\.?\d*)", data),
-        "Urge to Defecate (cc)": extract_value(r"Urge to defecate.*\s*(\d+\.?\d*)", data),
-        "Rectoanal Pressure Differential (mmHg)": extract_value(r"Rectoanal pressure differential.*\s*(-?\d+\.?\d*)", data),
-        "Discomfort (cc)": extract_value(r"Discomfort.*\s*(\d+\.?\d*)", data),
-        "Min Rectal Compliance": extract_value(r"Minimum rectal compliance.*\s*(\d+\.?\d*)", data),
-        "Max Rectal Compliance": extract_value(r"Maximum rectal compliance.*\s*(\d+\.?\d*)", data),
+        "Mean Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Mean Sphincter Pressure.*?\(rectal ref.*?\)\s*(\d+\.?\d*)", data),
+        "Max Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure.*?\(rectal ref.*?\)\s*(\d+\.?\d*)", data),
+        "Max Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure.*?\(abs\. ref.*?\)\s*(\d+\.?\d*)", data),
+        "Mean Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Mean Sphincter Pressure.*?\(abs\. ref.*?\)\s*(\d+\.?\d*)", data),
+        "Duration of Squeeze (sec)": extract_value(r"Duration of sustained squeeze.*?\s*(\d+\.?\d*)", data),
+        "Length of HPZ (cm)": extract_value(r"Length of HPZ.*?\s*(\d+\.?\d*)", data),
+        "Length verge to center (cm)": extract_value(r"Length verge to center.*?\s*(\d+\.?\d*)", data),
+        "Residual Anal Pressure (mmHg)": extract_value(r"Residual Anal Pressure.*?\s*(\d+\.?\d*)", data),
+        "Percent Anal Relaxation (%)": extract_value(r"Percent anal relaxation.*?\s*(\d+\.?\d*)", data),
+        "First Sensation (cc)": extract_value(r"First sensation.*?\s*(\d+\.?\d*)", data),
+        "Intrarectal Pressure (mmHg)": extract_value(r"Intrarectal pressure.*?\s*(\d+\.?\d*)", data),
+        "Urge to Defecate (cc)": extract_value(r"Urge to defecate.*?\s*(\d+\.?\d*)", data),
+        "Rectoanal Pressure Differential (mmHg)": extract_value(r"Rectoanal pressure differential.*?\s*(-?\d+\.?\d*)", data),
+        "Discomfort (cc)": extract_value(r"Discomfort.*?\s*(\d+\.?\d*)", data),
+        "Min Rectal Compliance": extract_value(r"Minimum rectal compliance.*?\s*(\d+\.?\d*)", data),
+        "Max Rectal Compliance": extract_value(r"Maximum rectal compliance.*?\s*(\d+\.?\d*)", data),
         "RAIR": "Present" if "RAIR" in data else "Not Present",
         "Indications": categorize_indications(extract_value(r"Indications:\s*(.*)", data)),
         "Diagnoses": extract_value(r"Diagnoses \(London classification\):\s*(.*)", data)
     }
     
-    # Keep only required fields
-    extracted_values = {k: extracted_values[k] for k in required_fields if k in extracted_values}
-    
+    # Display extracted data for debugging
     st.write("### Extracted Data (Debugging)")
     st.json(extracted_values)
     
@@ -94,3 +84,4 @@ if uploaded_file:
     df.to_excel(output_excel_path, index=False)
     with open(output_excel_path, "rb") as f:
         st.download_button("Download Excel File", f, file_name="Processed_Data.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+

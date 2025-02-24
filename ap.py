@@ -10,62 +10,57 @@ if uploaded_file:
     
     def extract_value(pattern, data, default="N/A"):
         for i, line in enumerate(data):
-            if re.search(pattern, line):
+            if re.search(pattern, line, re.IGNORECASE):
                 # Check if the next line contains the value
-                if i + 1 < len(data) and re.match(r'^[0-9.-]+$', data[i + 1].strip()):
+                if i + 1 < len(data) and re.match(r'^[0-9A-Za-z .-]+$', data[i + 1].strip()):
                     return data[i + 1].strip()
-                return line.split(pattern)[-1].strip()
+                return re.sub(pattern, '', line).strip()
         return default
     
-    # Extract patient details
-    patient_name = extract_value(r"Patient:", data)
-    gender = extract_value(r"Gender:", data)
-    dob = extract_value(r"DOB:", data)
-    physician = extract_value(r"Physician:", data)
-    exam_date = extract_value(r"Examination Date:", data)
+    # Extract required fields based on Book2.xlsx headers
+    required_fields = [
+        "Patient Name", "Gender", "Date of Birth", "Physician", "Operator", "Referring Physician", "Examination Date", 
+        "Height", "Weight", "Mean Sphincter Pressure (Rectal ref) (mmHg)", "Max Sphincter Pressure (Rectal ref) (mmHg)", 
+        "Max Sphincter Pressure (Abs. ref) (mmHg)", "Mean Sphincter Pressure (Abs. ref) (mmHg)", "Duration of Squeeze (sec)", 
+        "Length of HPZ (cm)", "Length verge to center (cm)", "Residual Anal Pressure (mmHg)", "Percent Anal Relaxation (%)", 
+        "First Sensation (cc)", "Intrarectal Pressure (mmHg)", "Urge to Defecate (cc)", "Rectoanal Pressure Differential (mmHg)", 
+        "Discomfort (cc)", "Min Rectal Compliance", "Max Rectal Compliance", "RAIR", "Indications", "Diagnoses"
+    ]
     
     # Extract measurements
-    mean_sphincter_pressure_rectal = extract_value(r"Mean Sphincter Pressure\(rectal ref.*\)", data)
-    max_sphincter_pressure_rectal = extract_value(r"Max\. Sphincter Pressure\(rectal ref.*\)", data)
-    max_sphincter_pressure_abs = extract_value(r"Max\. Sphincter Pressure\(abs\. ref.*\)", data)
-    mean_sphincter_pressure_abs = extract_value(r"Mean Sphincter Pressure\(abs\. ref.*\)", data)
-    duration_squeeze = extract_value(r"Duration of sustained squeeze.*", data)
-    length_hpz = extract_value(r"Length of HPZ.*", data)
-    length_verge_center = extract_value(r"Length verge to center.*", data)
-    residual_anal_pressure = extract_value(r"Residual Anal Pressure.*", data)
-    percent_anal_relaxation = extract_value(r"Percent anal relaxation.*", data)
-    first_sensation = extract_value(r"First sensation.*", data)
-    intrarectal_pressure = extract_value(r"Intrarectal pressure.*", data)
-    urge_to_defecate = extract_value(r"Urge to defecate.*", data)
-    rectoanal_pressure_diff = extract_value(r"Rectoanal pressure differential.*", data)
-    discomfort = extract_value(r"Discomfort.*", data)
-    min_rectal_compliance = extract_value(r"Minimum rectal compliance.*", data)
-    max_rectal_compliance = extract_value(r"Maximum rectal compliance.*", data)
-    
-    # Debugging: Display extracted values
     extracted_values = {
-        "Patient Name": patient_name,
-        "Gender": gender,
-        "Date of Birth": dob,
-        "Physician": physician,
-        "Examination Date": exam_date,
-        "Mean Sphincter Pressure (Rectal ref) (mmHg)": mean_sphincter_pressure_rectal,
-        "Max Sphincter Pressure (Rectal ref) (mmHg)": max_sphincter_pressure_rectal,
-        "Max Sphincter Pressure (Abs. ref) (mmHg)": max_sphincter_pressure_abs,
-        "Mean Sphincter Pressure (Abs. ref) (mmHg)": mean_sphincter_pressure_abs,
-        "Duration of Squeeze (sec)": duration_squeeze,
-        "Length of HPZ (cm)": length_hpz,
-        "Length verge to center (cm)": length_verge_center,
-        "Residual Anal Pressure (mmHg)": residual_anal_pressure,
-        "Percent Anal Relaxation (%)": percent_anal_relaxation,
-        "First Sensation (cc)": first_sensation,
-        "Intrarectal Pressure (mmHg)": intrarectal_pressure,
-        "Urge to Defecate (cc)": urge_to_defecate,
-        "Rectoanal Pressure Differential (mmHg)": rectoanal_pressure_diff,
-        "Discomfort (cc)": discomfort,
-        "Min Rectal Compliance": min_rectal_compliance,
-        "Max Rectal Compliance": max_rectal_compliance
+        "Patient Name": extract_value(r"Patient:", data),
+        "Gender": extract_value(r"Gender:", data),
+        "Date of Birth": extract_value(r"DOB:", data),
+        "Physician": extract_value(r"Physician:", data),
+        "Operator": extract_value(r"Operator:", data),
+        "Referring Physician": extract_value(r"Referring Physician:", data),
+        "Examination Date": extract_value(r"Examination Date:", data),
+        "Height": extract_value(r"Height:", data),
+        "Weight": extract_value(r"Weight:", data),
+        "Mean Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Mean Sphincter Pressure\(rectal ref.*\)", data),
+        "Max Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure\(rectal ref.*\)", data),
+        "Max Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure\(abs\. ref.*\)", data),
+        "Mean Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Mean Sphincter Pressure\(abs\. ref.*\)", data),
+        "Duration of Squeeze (sec)": extract_value(r"Duration of sustained squeeze.*", data),
+        "Length of HPZ (cm)": extract_value(r"Length of HPZ.*", data),
+        "Length verge to center (cm)": extract_value(r"Length verge to center.*", data),
+        "Residual Anal Pressure (mmHg)": extract_value(r"Residual Anal Pressure.*", data),
+        "Percent Anal Relaxation (%)": extract_value(r"Percent anal relaxation.*", data),
+        "First Sensation (cc)": extract_value(r"First sensation.*", data),
+        "Intrarectal Pressure (mmHg)": extract_value(r"Intrarectal pressure.*", data),
+        "Urge to Defecate (cc)": extract_value(r"Urge to defecate.*", data),
+        "Rectoanal Pressure Differential (mmHg)": extract_value(r"Rectoanal pressure differential.*", data),
+        "Discomfort (cc)": extract_value(r"Discomfort.*", data),
+        "Min Rectal Compliance": extract_value(r"Minimum rectal compliance.*", data),
+        "Max Rectal Compliance": extract_value(r"Maximum rectal compliance.*", data),
+        "RAIR": "Present" if "RAIR" in data else "Not Present",
+        "Indications": extract_value(r"Indications", data) if any(kw in extract_value(r"Indications", data).lower() for kw in ["tear", "sphincter", "dysfunction"]) else "Other",
+        "Diagnoses": extract_value(r"Diagnoses \(London classification\).*", data)
     }
+    
+    # Keep only required fields
+    extracted_values = {k: extracted_values[k] for k in required_fields if k in extracted_values}
     
     st.write("### Extracted Data (Debugging)")
     st.json(extracted_values)
@@ -82,4 +77,5 @@ if uploaded_file:
     df.to_excel(output_excel_path, index=False)
     with open(output_excel_path, "rb") as f:
         st.download_button("Download Excel File", f, file_name="Processed_Data.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
 

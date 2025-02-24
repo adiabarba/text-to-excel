@@ -15,6 +15,8 @@ def extract_value(pattern, text, default="N/A"):
 
 def categorize_indications(text):
     """
+    def categorize_indications(text):
+    """
     Categorizes the indication based on keywords. If none are found,
     returns "Other".
     """
@@ -24,8 +26,8 @@ def categorize_indications(text):
         "hirschsprung": "s/p Hirschprung",
         "anorectal malformation": "Anorectal malformation",
         "anal tear": "Anal Tear",
-        "perianal tear": "Anal Tear",
-        "spina bifida": "Spina bifida"
+        "perianal
+
     }
     text_lower = text.lower() if text != "N/A" else ""
     for key, value in indication_options.items():
@@ -55,9 +57,28 @@ if uploaded_file is not None:
     
     # Extract data using regex
     extracted_data = {
-        "Patient Name": extract_value(r"Patient\s*[:]?[\s]*(.*)", data),
-        "Patient ID": extract_value(r"(?:Patient\s+ID|ID\s+Number)\s*[:]?[\s]*(\w+)", data),
-        "Gender": extract_value(r"Gender\s*[:]?[\s]*(.*)", data),
+        # Capture Patient Name & Patient ID correctly (Name first, then ID if it’s a number)
+patient_name, patient_id = "N/A", "N/A"
+
+# Match both Name and ID together
+pat_match = re.search(r"(?i)Patient:\s*(.+?)\s*\n\s*(\d{6,})", data)
+
+if pat_match:
+    # If match found, assign Name & ID correctly
+    patient_name = pat_match.group(1).strip()  # First line = Name
+    patient_id = pat_match.group(2).strip()  # Second line = ID
+else:
+    # Fallback: Try just getting Patient Name alone
+    fallback_name = re.search(r"(?i)^Patient:\s*(.+)$", data, flags=re.MULTILINE)
+    if fallback_name:
+        patient_name = fallback_name.group(1).strip()
+    
+    # Try to find an explicit "Patient ID:" somewhere else
+    fallback_id = re.search(r"(?i)(?:Patient\s+ID|ID\s+Number)\s*[:]?[\s]*(\w+)", data)
+    if fallback_id:
+        patient_id = fallback_id.group(1).strip()
+,
+        gender = extract_value(r"^Gender:\s*([A-Za-z]+)", data, default="N/A"),
         "Date of Birth": extract_value(r"(?:DOB|Date of Birth)\s*[:]?[\s]*(.*)", data),
         "Physician": extract_value(r"Physician\s*[:]?[\s]*(.*)", data),
         "Operator": extract_value(r"Operator\s*[:]?[\s]*(.*)", data),

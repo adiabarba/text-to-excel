@@ -41,32 +41,22 @@ def extract_patient_data(uploaded_file):
     }
 
     current_key = None
-    current_value = ""
 
-    for line in lines:
+    for i, line in enumerate(lines):
         line = line.strip()
         
         if not line:
             continue
-        
-        # Detect numbers and match them with categories
-        number_match = re.search(r"([\d]+\.\d+|\d+)", line)
-        if number_match:
-            extracted_number = number_match.group(1)
-        
-        if ":" in line:  # Detecting keys
-            if current_key and current_value:
-                data[current_key] = current_value.strip()
-            current_key = line.replace(":", "").strip()
-            current_value = ""
-        elif current_key:
-            current_value += " " + line
-            if number_match and current_key in data:  # Assign detected numbers
-                data[current_key] = extracted_number
 
-    # Store the last key-value pair
-    if current_key and current_value:
-        data[current_key] = current_value.strip()
+        # Detect a category title (if followed by a number or a next-line number)
+        if ":" in line:
+            current_key = line.replace(":", "").strip()
+        else:
+            # If it's a numeric value, store it under the last detected key
+            number_match = re.search(r"([\d]+\.\d+|\d+)", line)
+            if number_match and current_key in data:
+                data[current_key] = number_match.group(1)
+                current_key = None  # Reset key after storing a value
 
     # Extract only the Patient ID (removing the name)
     if "Patient" in data:
@@ -75,10 +65,10 @@ def extract_patient_data(uploaded_file):
         data["Patient"] = patient_id if patient_id else "Unknown"
 
     # Extract "Procedure Date" from the file
-    if "Procedure" in data and data["Procedure"]:
-        date_parts = [part for part in data["Procedure"].split() if "/" in part]
-        if date_parts:
-            data["Procedure Date"] = date_parts[0]
+    for line in lines:
+        if "/" in line and len(line.split("/")) == 3:  # Looking for DD/MM/YYYY format
+            data["Procedure Date"] = line.strip()
+            break
 
     # Convert to DataFrame
     df = pd.DataFrame([data])
@@ -110,9 +100,5 @@ if uploaded_file is not None:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-        
-               
-            
-    
-  
-      
+       
+   

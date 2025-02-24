@@ -1,166 +1,77 @@
 import pandas as pd
-import streamlit as st
-import io
 import re
 
-def extract_patient_data(uploaded_file):
-    """
-    Extracts structured key-value pairs from a text file and maps them only to the specified headers.
-    """
-    file_content = uploaded_file.read().decode("utf-8")
-    lines = file_content.split("\n")
+# File paths
+text_file_path = "/mnt/data/Patient 3.txt"
+excel_file_path = "/mnt/data/Book2.xlsx"
+output_excel_path = "/mnt/data/Processed_Data.xlsx"
 
-    # Define the exact titles to extract
-    required_titles = {
-        "Patient": None,
-        "Gender": None,
-        "DOB": None,
-        "Procedure date": None,
-        "Physician": None,
-        "Weight": None,
-        "Height": None,
-        "Resting": None,
-        "Squeeze": None,
-        "Mean Sphincter Pressure (rectal ref.) (mmHg)": None,
-        "Max Sphincter Pressure (rectal ref.) (mmHg)": None,
-        "Max Sphincter Pressure (abs. ref.) (mmHg)": None,
-        "Mean Sphincter Pressure (abs. ref.) (mmHg)": None,
-        "Duration of sustained squeeze (sec)": None,
-        "Length of HPZ (cm)": None,
-        "Length verge to center (cm)": None,
-        "Push (attempted defecation)": None,
-        "Balloon Inflation": None,
-        "Residual Anal Pressure (abs. ref.) (mmHg)": None,
-        "RAIR": None,
-        "Percent Anal Relaxation (%)": None,
-        "First Sensation (cc)": None,
-        "Intrarectal Pressure (mmHg)": None,
-        "Urge to Defecate (cc)": None,
-        "Rectoanal Pressure Differential (mmHg)": None,
-        "Discomfort (cc)": None,
-        "Minimum Rectal Compliance": None,
-        "Maximum Rectal Compliance": None,
-        "Indications": None,
-        "Findings": None,
-        "Balloon expulsion test": None
-    }
+# Read the text file
+with open(text_file_path, "r", encoding="utf-8") as file:
+    data = file.readlines()
 
-    capture_findings = False  
-    indications_found = []
-    rair_found = False  
+def extract_value(pattern, data, default="N/A"):
+    for line in data:
+        match = re.search(pattern, line)
+        if match:
+            return match.group(1).strip()
+    return default
 
-    # Define multiple Indications to check
-    indication_options = {
-        "Constipation": "Constipation",
-        "Incontinence": "Incontinence",
-        "Hirschsprung": "s/p Hirschprung",
-        "Anorectal malformation": "Anorectal malformation",
-        "Perianal tear": "Perianal tear",
-        "Spina bifida": "Spina bifida"
-    }
+# Extract patient details
+patient_name = extract_value(r"Patient:\s*(.*)", data)
+gender = extract_value(r"Gender:\s*(.*)", data)
+dob = extract_value(r"DOB:\s*(.*)", data)
+physician = extract_value(r"Physician:\s*(.*)", data)
+exam_date = extract_value(r"Examination Date:\s*(.*)", data)
 
-    for i, line in enumerate(lines):
-        line = line.strip()
+# Extract measurements
+mean_sphincter_pressure_rectal = extract_value(r"Mean Sphincter Pressure\(rectal ref.\)\(mmHg\)\s*(\d+\.\d+)", data)
+max_sphincter_pressure_rectal = extract_value(r"Max. Sphincter Pressure\(rectal ref.\)\(mmHg\)\s*(\d+\.\d+)", data)
+max_sphincter_pressure_abs = extract_value(r"Max. Sphincter Pressure\(abs. ref.\)\(mmHg\)\s*(\d+\.\d+)", data)
+mean_sphincter_pressure_abs = extract_value(r"Mean Sphincter Pressure\(abs. ref.\)\(mmHg\)\s*(\d+\.\d+)", data)
+duration_squeeze = extract_value(r"Duration of sustained squeeze\(sec\)\s*(\d+\.\d+)", data)
+length_hpz = extract_value(r"Length of HPZ\(cm\)\s*(\d+\.\d+)", data)
+length_verge_center = extract_value(r"Length verge to center\(cm\)\s*(\d+\.\d+)", data)
+residual_anal_pressure = extract_value(r"Residual Anal Pressure\(abs. ref.\)\(mmHg\)\s*(\d+\.\d+)", data)
+percent_anal_relaxation = extract_value(r"Percent anal relaxation\(%\)\s*(\d+)", data)
+first_sensation = extract_value(r"First sensation\(cc\)\s*(\d+)", data)
+intrarectal_pressure = extract_value(r"Intrarectal pressure\(mmHg\)\s*(\d+\.\d+)", data)
+urge_to_defecate = extract_value(r"Urge to defecate\(cc\)\s*(\d+)", data)
+rectoanal_pressure_diff = extract_value(r"Rectoanal pressure differential\(mmHg\)\s*(-?\d+\.\d+)", data)
+discomfort = extract_value(r"Discomfort\(cc\)\s*(\d+)", data)
+min_rectal_compliance = extract_value(r"Minimum rectal compliance\s*(\d+\.\d+)", data)
+max_rectal_compliance = extract_value(r"Maximum rectal compliance\s*(\d+\.\d+)", data)
 
-        if not line:
-            continue
+# Create a dataframe with extracted data
+df = pd.DataFrame({
+    "Patient Name": [patient_name],
+    "Gender": [gender],
+    "Date of Birth": [dob],
+    "Physician": [physician],
+    "Examination Date": [exam_date],
+    "Mean Sphincter Pressure (Rectal ref) (mmHg)": [mean_sphincter_pressure_rectal],
+    "Max Sphincter Pressure (Rectal ref) (mmHg)": [max_sphincter_pressure_rectal],
+    "Max Sphincter Pressure (Abs. ref) (mmHg)": [max_sphincter_pressure_abs],
+    "Mean Sphincter Pressure (Abs. ref) (mmHg)": [mean_sphincter_pressure_abs],
+    "Duration of Squeeze (sec)": [duration_squeeze],
+    "Length of HPZ (cm)": [length_hpz],
+    "Length verge to center (cm)": [length_verge_center],
+    "Residual Anal Pressure (mmHg)": [residual_anal_pressure],
+    "Percent Anal Relaxation (%)": [percent_anal_relaxation],
+    "First Sensation (cc)": [first_sensation],
+    "Intrarectal Pressure (mmHg)": [intrarectal_pressure],
+    "Urge to Defecate (cc)": [urge_to_defecate],
+    "Rectoanal Pressure Differential (mmHg)": [rectoanal_pressure_diff],
+    "Discomfort (cc)": [discomfort],
+    "Min Rectal Compliance": [min_rectal_compliance],
+    "Max Rectal Compliance": [max_rectal_compliance]
+})
 
-        # Extract Patient ID (only numbers)
-        if "Patient:" in line:
-            patient_info = re.findall(r"\d+", lines[i + 1])
-            required_titles["Patient"] = patient_info[0] if patient_info else ""
+# Save the extracted data to an Excel file
+df.to_excel(output_excel_path, index=False)
 
-        # Extract Gender, DOB, Procedure Date
-        if "Gender:" in line:
-            required_titles["Gender"] = lines[i + 1].strip()
-        if "DOB:" in line:
-            required_titles["DOB"] = lines[i + 1].strip()
-        if "Examination Date:" in line or "Procedure Date:" in line:
-            required_titles["Procedure date"] = lines[i + 1].strip()
+# Display the data visually
+import ace_tools as tools
+tools.display_dataframe_to_user(name="Extracted Data", dataframe=df)
 
-        # Extract Physician (ignoring "Operator" and "Referring Physician")
-        if "Physician:" in line:
-            required_titles["Physician"] = lines[i + 1].strip()
-        if "Operator:" in line:
-            required_titles["Physician"] = lines[i + 1].strip()  
-
-        # Extract Indications (multiple options allowed)
-        for keyword, label in indication_options.items():
-            if keyword.lower() in line.lower():
-                indications_found.append(label)
-
-        # Extract Findings (Diagnoses)
-        if "Diagnoses (London classification)" in line:
-            capture_findings = True
-            required_titles["Findings"] = ""
-            continue
-
-        if capture_findings:
-            if "Additional findings" in line:  
-                capture_findings = False
-                continue
-            required_titles["Findings"] += line + " "
-
-        # Extract numerical values for measurements
-        for key in required_titles.keys():
-            if key.lower() in line.lower():
-                value_match = re.search(r"\d+(\.\d+)?", line)
-                if value_match:
-                    required_titles[key] = value_match.group()
-                break
-
-        # Extract RAIR status properly
-        if "RAIR" in line:
-            if "present" in line.lower():
-                required_titles["RAIR"] = "Present"
-                rair_found = True
-            elif "not present" in line.lower() or "absent" in line.lower():
-                required_titles["RAIR"] = "Not Present"
-                rair_found = True
-
-        # Extract Balloon Expulsion Test
-        if "Balloon expulsion test" in line.lower():
-            required_titles["Balloon expulsion test"] = line.split(":")[1].strip()
-
-    # Store Indications (combine multiple found options or use "Other" if none found)
-    required_titles["Indications"] = ", ".join(indications_found) if indications_found else "Other"
-
-    # Ensure RAIR is marked "Not Present" if no mention was found
-    if not rair_found:
-        required_titles["RAIR"] = "Not Present"
-
-    # Convert None values to empty strings
-    for key in required_titles:
-        if required_titles[key] is None:
-            required_titles[key] = ""
-
-    # Convert to DataFrame
-    df = pd.DataFrame([required_titles])
-    return df
-
-# Streamlit Web App
-st.title("📂 Convert TXT to Excel (Final Version with All Data)")
-st.write("Upload your structured text file, and it will be automatically converted into an Excel file with all values correctly assigned.")
-
-uploaded_file = st.file_uploader("Choose a text file", type=["txt"])
-
-if uploaded_file is not None:
-    st.success("✅ File uploaded successfully!")
-    
-    # Call the function with the correct file format
-    df = extract_patient_data(uploaded_file)
-    
-    # Save to Excel in memory
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False)
-    output.seek(0)
-    
-    # Provide a download button
-    st.download_button(
-        label="📥 Download Final Excel File with All Data",
-        data=output,
-        file_name="Final_Patient_Data.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
+print(f"Extracted data has been saved to {output_excel_path}")

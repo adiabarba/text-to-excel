@@ -19,17 +19,18 @@ if uploaded_file:
     
     # Indication categories
     indication_options = {
-        "Constipation": "Constipation",
-        "Incontinence": "Incontinence",
-        "Hirschsprung": "s/p Hirschprung",
-        "Anorectal malformation": "Anorectal malformation",
-        "Perianal tear": "Perianal tear",
-        "Spina bifida": "Spina bifida"
+        "constipation": "Constipation",
+        "incontinence": "Incontinence",
+        "hirschsprung": "s/p Hirschprung",
+        "anorectal malformation": "Anorectal malformation",
+        "anal tear": "Anal Tear",
+        "perianal tear": "Anal Tear",
+        "spina bifida": "Spina bifida"
     }
     
     def categorize_indications(text):
         for key, value in indication_options.items():
-            if key.lower() in text.lower():
+            if key in text.lower():
                 return value
         return "Other"
     
@@ -46,7 +47,7 @@ if uploaded_file:
     # Extract measurements
     extracted_values = {
         "Patient Name": extract_value(r"Patient:", data),
-        "Patient ID": extract_value(r"\d{9}", data),
+        "Patient ID": extract_value(r"\b\d{9}\b", data),
         "Gender": extract_value(r"Gender:", data),
         "Date of Birth": extract_value(r"DOB:", data),
         "Physician": extract_value(r"Physician:", data),

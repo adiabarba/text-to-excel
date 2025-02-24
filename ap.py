@@ -42,13 +42,13 @@ def extract_patient_data(uploaded_file):
 
     current_key = None
 
-    for i, line in enumerate(lines):
-        line = line.strip()
-        
+    for i in range(len(lines)):
+        line = lines[i].strip()
+
         if not line:
             continue
 
-        # Detect a category title (if followed by a number or a next-line number)
+        # Detect category titles
         if ":" in line:
             current_key = line.replace(":", "").strip()
         else:
@@ -57,6 +57,12 @@ def extract_patient_data(uploaded_file):
             if number_match and current_key in data:
                 data[current_key] = number_match.group(1)
                 current_key = None  # Reset key after storing a value
+
+        # If next line contains a number but no new key, assign it to the last found key
+        if i < len(lines) - 1:
+            next_line = lines[i + 1].strip()
+            if re.match(r"^[\d]+\.\d+|[\d]+$", next_line) and current_key in data:
+                data[current_key] = next_line
 
     # Extract only the Patient ID (removing the name)
     if "Patient" in data:
@@ -75,7 +81,7 @@ def extract_patient_data(uploaded_file):
     return df
 
 # Streamlit Web App
-st.title("📂 Convert TXT to Excel (Structured with Numbers)")
+st.title("📂 Convert TXT to Excel (Corrected Values)")
 st.write("Upload your structured text file, and it will be automatically converted into an Excel file with all values correctly assigned.")
 
 uploaded_file = st.file_uploader("Choose a text file", type=["txt"])
@@ -100,5 +106,3 @@ if uploaded_file is not None:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-       
-   

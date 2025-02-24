@@ -17,16 +17,19 @@ if uploaded_file:
                 return re.sub(pattern, '', line).strip()
         return default
     
+    # Indication categories
+    indication_options = {
+        "Constipation": "Constipation",
+        "Incontinence": "Incontinence",
+        "Hirschsprung": "s/p Hirschprung",
+        "Anorectal malformation": "Anorectal malformation",
+        "Perianal tear": "Perianal tear",
+        "Spina bifida": "Spina bifida"
+    }
+    
     def categorize_indications(text):
-        categories = {
-            "constipation": "Constipation",
-            "incontinence": "Incontinence",
-            "hirschsprung": "s/p Hirschprung",
-            "anorectal malformation": "Anorectal malformation",
-            "anal tear": "Anal Tear"
-        }
-        for key, value in categories.items():
-            if key in text.lower():
+        for key, value in indication_options.items():
+            if key.lower() in text.lower():
                 return value
         return "Other"
     
@@ -73,38 +76,7 @@ if uploaded_file:
         "Indications": categorize_indications(extract_value(r"Indications", data)),
         "Diagnoses": extract_value(r"Diagnoses \(London classification\).*", data)
     }
-     # Indication categories
-    indication_options = {
-        "Constipation": "Constipation",
-        "Incontinence": "Incontinence",
-        "Hirschsprung": "s/p Hirschprung",
-        "Anorectal malformation": "Anorectal malformation",
-        "Perianal tear": "Perianal tear",
-        "Spina bifida": "Spina bifida"
-    }
-
-    for i in range(len(lines)):
-        line = lines[i].strip()
-
-        if not line:
-            continue
-
-        # Extract specific key-value pairs
-        if ":" in line:
-            key = line.replace(":", "").strip()
-            if key in required_titles:
-                current_key = key
-                continue  # Move to next line to capture value
-
-        elif current_key:
-            # Extract the first numeric value for each title
-            number_match = re.search(r"^-?\d+(\.\d+)?$", line)  # Match numbers (including decimals)
-            if number_match:
-                required_titles[current_key] = number_match.group(0)  # Store only the first value
-            else:
-                required_titles[current_key] = line  # Store text if it's not a number
-
-            current_key = None  # Reset key to avoid overwriting
+    
     # Keep only required fields
     extracted_values = {k: extracted_values[k] for k in required_fields if k in extracted_values}
     

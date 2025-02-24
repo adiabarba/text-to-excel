@@ -10,7 +10,7 @@ def extract_patient_data(uploaded_file):
     file_content = uploaded_file.read().decode("utf-8")
     lines = file_content.split("\n")
 
-    # Define the exact titles to extract (from the spreadsheet)
+    # Define the exact titles to extract
     required_titles = {
         "Patient": None,
         "Gender": None,
@@ -31,7 +31,7 @@ def extract_patient_data(uploaded_file):
         "Push (attempted defecation)": None,
         "Balloon Inflation": None,
         "Residual Anal Pressure (abs. ref.) (mmHg)": None,
-        "RAIR": None,  # Will be "Present" or "Not Present"
+        "RAIR": None,
         "Percent Anal Relaxation (%)": None,
         "First Sensation (cc)": None,
         "Intrarectal Pressure (mmHg)": None,
@@ -40,8 +40,8 @@ def extract_patient_data(uploaded_file):
         "Discomfort (cc)": None,
         "Minimum Rectal Compliance": None,
         "Maximum Rectal Compliance": None,
-        "Indications": None,  # Categorized values
-        "Findings": None,  # Diagnoses (London classification)
+        "Indications": None,
+        "Findings": None,
         "Balloon expulsion test": None
     }
 
@@ -66,7 +66,7 @@ def extract_patient_data(uploaded_file):
 
         # Extract key-value pairs, even when values are on the next line
         if ":" in line or "(" in line:
-            key = re.sub(r"[:\(\)]", "", line).strip()  # Remove special characters
+            key = re.sub(r"[:\(\)]", "", line).strip()
             if key in required_titles:
                 current_key = key
                 continue  # Move to next line to capture value
@@ -159,6 +159,5 @@ if uploaded_file is not None:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-     
     
   

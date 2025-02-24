@@ -41,23 +41,23 @@ if uploaded_file:
     
     # Extract required fields
     extracted_values = {
-        "Patient Name": extract_value(r"Patient[:\s]+(.+)", data),
-        "Patient ID": extract_value(r"Patient ID[:\s]+(\d{9})", data),
-        "Gender": extract_value(r"Gender[:\s]+(.+)", data),
-        "Date of Birth": extract_value(r"(?:DOB|Date of Birth)[:\s]+(.+)", data),
-        "Physician": extract_value(r"Physician[:\s]+(.+)", data),
-        "Operator": extract_value(r"Operator[:\s]+(.+)", data),
-        "Referring Physician": extract_value(r"Referring Physician[:\s]+(.+)", data),
-        "Examination Date": extract_value(r"Examination Date[:\s]+(.+)", data),
-        "Height": extract_value(r"Height[:\s]+(\d+\.?\d*)", data),
-        "Weight": extract_value(r"Weight[:\s]+(\d+\.?\d*)", data),
-        "Mean Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Mean Sphincter Pressure.*?\(rectal ref.*?\)[:\s]+(\d+\.?\d*)", data),
-        "Max Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure.*?\(rectal ref.*?\)[:\s]+(\d+\.?\d*)", data),
-        "Max Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure.*?\(abs\. ref.*?\)[:\s]+(\d+\.?\d*)", data),
-        "Mean Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Mean Sphincter Pressure.*?\(abs\. ref.*?\)[:\s]+(\d+\.?\d*)", data),
+        "Patient Name": extract_value(r"Patient[:\s]*(.*)", data),
+        "Patient ID": extract_value(r"Patient ID[:\s]*(\d{9})", data),
+        "Gender": extract_value(r"Gender[:\s]*(.*)", data),
+        "Date of Birth": extract_value(r"(?:DOB|Date of Birth)[:\s]*(.*)", data),
+        "Physician": extract_value(r"Physician[:\s]*(.*)", data),
+        "Operator": extract_value(r"Operator[:\s]*(.*)", data),
+        "Referring Physician": extract_value(r"Referring Physician[:\s]*(.*)", data),
+        "Examination Date": extract_value(r"Examination Date[:\s]*(.*)", data),
+        "Height": extract_value(r"Height[:\s]*(\d+\.?\d*)", data),
+        "Weight": extract_value(r"Weight[:\s]*(\d+\.?\d*)", data),
+        "Mean Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Mean Sphincter Pressure.*?\(rectal ref.*?\)[:\s]*(\d+\.?\d*)", data),
+        "Max Sphincter Pressure (Rectal ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure.*?\(rectal ref.*?\)[:\s]*(\d+\.?\d*)", data),
+        "Max Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Max\. Sphincter Pressure.*?\(abs\. ref.*?\)[:\s]*(\d+\.?\d*)", data),
+        "Mean Sphincter Pressure (Abs. ref) (mmHg)": extract_value(r"Mean Sphincter Pressure.*?\(abs\. ref.*?\)[:\s]*(\d+\.?\d*)", data),
         "RAIR": "Present" if any("RAIR" in line for line in data) else "Not Present",
-        "Indications": categorize_indications(extract_value(r"Indications[:\s]+(.+)", data)),
-        "Diagnoses": extract_value(r"Diagnoses \(London classification\)[:\s]+(.+)", data)
+        "Indications": categorize_indications(extract_value(r"Indications[:\s]*(.*)", data)),
+        "Diagnoses": extract_value(r"Diagnoses \(London classification\)[:\s]*(.*)", data)
     }
     
     # Debugging: Display extracted values before writing to Excel
@@ -76,4 +76,3 @@ if uploaded_file:
     df.to_excel(output_excel_path, index=False)
     with open(output_excel_path, "rb") as f:
         st.download_button("Download Excel File", f, file_name="Processed_Data.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-

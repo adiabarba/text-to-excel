@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import re
-import chardet  # Ensure chardet is installed: pip install chardet
+import codecs  # ✅ No need for external libraries
 from io import BytesIO
 
 st.title("Extract Data from Multiple Text Files to Excel")
@@ -48,12 +48,15 @@ if uploaded_files:
     all_data = []  # Store extracted data
 
     for uploaded_file in uploaded_files:
-        # ✅ Detect encoding before decoding
+        # ✅ Automatically handle encoding without `chardet`
         raw_data = uploaded_file.read()
-        detected_encoding = chardet.detect(raw_data)["encoding"]
-
-        # ✅ Decode file with detected encoding
-        data = raw_data.decode(detected_encoding, errors="replace")
+        try:
+            data = raw_data.decode("utf-8")  # Try UTF-8 first
+        except UnicodeDecodeError:
+            try:
+                data = raw_data.decode("windows-1255")  # Try Windows-1255 (Hebrew)
+            except UnicodeDecodeError:
+                data = raw_data.decode("ISO-8859-8", errors="replace")  # Default to Hebrew encoding
 
         # Capture Patient Name & Patient ID
         patient_name, patient_id = "N/A", "N/A"

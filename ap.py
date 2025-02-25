@@ -9,6 +9,13 @@ def extract_value(pattern, text, default="N/A"):
     match = re.search(pattern, text, flags=re.IGNORECASE | re.DOTALL)
     return match.group(1).strip() if match else default
 
+def extract_max_pressure(pattern, text, default="N/A"):
+    matches = re.findall(pattern, text, flags=re.IGNORECASE | re.DOTALL)
+    if matches:
+        numeric_values = [float(m) for m in matches if m.replace('.', '', 1).isdigit()]
+        return str(max(numeric_values)) if numeric_values else default
+    return default
+
 def categorize_indications(text):
     indication_options = {
         "constipation": "Constipation",
@@ -18,21 +25,26 @@ def categorize_indications(text):
         "anal tear": "Anal Tear",
         "perianal tear": "Perianal Tear",
         "s/p perianal tear": "s/p Perianal Tear",
-        "spina bifida": "Spina bifida"
+        "spina bifida": "Spina bifida",
+        
+        # ✅ Hebrew translations
+        "עצירות": "Refractory Constipation",
+        "מגהרקטום": "Megarectum",
+        "לחץ בסיס גבוה": "High Basal Pressure"
     }
     
     text_lower = text.lower() if text != "N/A" else ""
     
-    for key in indication_options.keys():
-        if key in text_lower:
-            return indication_options[key]  
+    for key, value in indication_options.items():
+        if key in text_lower or key in text:
+            return value  
     return "Other"
 
 # Allow multiple file uploads
 uploaded_files = st.file_uploader("Upload text files", type=["txt"], accept_multiple_files=True)
 
 if uploaded_files:
-    all_data = []  # List to store all extracted patient data
+    all_data = []  # Store extracted data
 
     for uploaded_file in uploaded_files:
         data = uploaded_file.read().decode("utf-8")
@@ -64,14 +76,17 @@ if uploaded_files:
             "Examination Date": extract_value(r"Examination Date\s*[:]?[\s]*(.*)", data),
             "Height": extract_value(r"Height\s*[:]?[\s]*(\d{1,3}\.?\d*)", data),
             "Weight": extract_value(r"Weight\s*[:]?[\s]*(\d{1,3}\.?\d*)", data),
-            "Mean Sphincter Pressure (Rectal ref) (mmHg)": extract_value(
+
+            # ✅ Fixed duplicate max pressure values
+            "Mean Sphincter Pressure (Rectal ref) (mmHg)": extract_max_pressure(
                 r"Mean\s*Sphincter\s*Pressure.*?rectal\s*ref.*?\(mmhg\)\s*([\-\d\.]+)", data),
-            "Max Sphincter Pressure (Rectal ref) (mmHg)": extract_value(
+            "Max Sphincter Pressure (Rectal ref) (mmHg)": extract_max_pressure(
                 r"Max\.?\s*Sphincter\s*Pressure.*?rectal\s*ref.*?\(mmhg\)\s*([\-\d\.]+)", data),
-            "Max Sphincter Pressure (Abs. ref) (mmHg)": extract_value(
+            "Max Sphincter Pressure (Abs. ref) (mmHg)": extract_max_pressure(
                 r"Max\.?\s*Sphincter\s*Pressure.*?abs\.?\s*ref.*?\(mmhg\)\s*([\-\d\.]+)", data),
-            "Mean Sphincter Pressure (Abs. ref) (mmHg)": extract_value(
+            "Mean Sphincter Pressure (Abs. ref) (mmHg)": extract_max_pressure(
                 r"Mean\s*Sphincter\s*Pressure.*?abs\.?\s*ref.*?\(mmhg\)\s*([\-\d\.]+)", data),
+
             "Length of HPZ (cm)": extract_value(
                 r"Length\s*of\s*HPZ.*?\(cm\)\s*([\-\d\.]+)", data),
             "Verge to Center Length (cm)": extract_value(
@@ -87,8 +102,12 @@ if uploaded_files:
             "Rectoanal Pressure Differential (mmHg)": extract_value(
                 r"Rectoanal\s+pressure\s+differential.*?\(mmhg\)\s*([\-\d\.]+)", data),
             "RAIR": "Present" if "RAIR" in data else "Not Present",
+
+            # ✅ Now correctly detects Hebrew Indications
             "Indications": categorize_indications(
-                extract_value(r"(?i)Indications\s*[:]?[\s]*(.*?)(?:\n[A-Z]|\Z)", data)),
+                extract_value(r"(?i)Indications\s*[:]?[\s]*(.*?)(?:\n[A-Z]|[\u0590-\u05FF]+\n|$)", data)
+            ),
+
             "Diagnoses": extract_value(
                 r"Diagnoses\s*\(London classification\)\s*(.*)", data)
         }

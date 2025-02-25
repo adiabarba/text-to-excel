@@ -21,4 +21,3 @@ def categorize_indications(text):
             return indication_options[key]  # ✅ Returns the correct formatted value
     
     return "Other"
-

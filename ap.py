@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import re
+import chardet  # Ensure chardet is installed: pip install chardet
 from io import BytesIO
 
 st.title("Extract Data from Multiple Text Files to Excel")
@@ -47,8 +48,13 @@ if uploaded_files:
     all_data = []  # Store extracted data
 
     for uploaded_file in uploaded_files:
-        data = uploaded_file.read().decode("utf-8")
-        
+        # ✅ Detect encoding before decoding
+        raw_data = uploaded_file.read()
+        detected_encoding = chardet.detect(raw_data)["encoding"]
+
+        # ✅ Decode file with detected encoding
+        data = raw_data.decode(detected_encoding, errors="replace")
+
         # Capture Patient Name & Patient ID
         patient_name, patient_id = "N/A", "N/A"
         pat_match = re.search(r"(?i)Patient:\s*(.+?)\s*\n\s*(\d{6,})", data)
